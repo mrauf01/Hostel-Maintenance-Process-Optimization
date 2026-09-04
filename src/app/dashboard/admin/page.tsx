@@ -67,6 +67,8 @@ export default async function AdminDashboard() {
             complaints={complaints}
             emptyTitle="No tickets in range"
             emptyBody="Complaints from every block land here for reassignment and SLA oversight."
+            defaultSort="oldest"
+            pageSize={20}
           />
         </TabsContent>
         <TabsContent value="ops" className="mt-4">

@@ -15,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Pager, pageSlice } from "@/components/pager";
 import { Input } from "@/components/ui/input";
 import { CATEGORY_LABELS, PRIORITY_LABELS, ROLE_LABELS } from "@/lib/constants";
 import type { Profile, SlaRule, Vendor } from "@/lib/types";
@@ -38,6 +39,7 @@ export function AdminOps({
   const [pending, start] = useTransition();
   const [query, setQuery] = useState("");
   const [removing, setRemoving] = useState<Profile | null>(null);
+  const [pendingPage, setPendingPage] = useState(0);
   const [draft, setDraft] = useState(
     Object.fromEntries(
       rules.map((r) => [
@@ -45,6 +47,22 @@ export function AdminOps({
         { response_minutes: r.response_minutes, resolution_hours: r.resolution_hours },
       ])
     )
+  );
+
+  const pendingNewestFirst = useMemo(() => {
+    return [...pendingUsers].sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+  }, [pendingUsers]);
+  const pendingPageSize = 10;
+  const pendingVisible = pageSlice(
+    pendingNewestFirst,
+    Math.min(
+      pendingPage,
+      Math.max(0, Math.ceil(pendingNewestFirst.length / pendingPageSize) - 1)
+    ),
+    pendingPageSize
   );
 
   const filteredPeople = useMemo(() => {
@@ -80,13 +98,13 @@ export function AdminOps({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          {pendingUsers.length === 0 && (
+          {pendingNewestFirst.length === 0 && (
             <p className="text-sm text-muted-foreground">
               No accounts waiting. New signups appear here until you approve
               them.
             </p>
           )}
-          {pendingUsers.map((u) => (
+          {pendingVisible.map((u) => (
             <div
               key={u.id}
               className="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2"
@@ -126,10 +144,14 @@ export function AdminOps({
               </div>
             </div>
           ))}
+          <Pager
+            page={pendingPage}
+            pageSize={pendingPageSize}
+            total={pendingNewestFirst.length}
+            onPage={setPendingPage}
+            noun="registration requests"
+          />
         </CardContent>
-      </Card>
-
-      <Card className="lg:col-span-2">
         <CardHeader className="gap-3 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle className="text-base">
             Registered people ({people.length})

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { EmptyState } from "@/components/empty-state";
+import { Pager, pageSlice } from "@/components/pager";
 import { TicketCard } from "@/components/ticket-card";
 import { Input } from "@/components/ui/input";
 import {
@@ -23,17 +24,22 @@ export function TicketBoard({
   emptyBody,
   actionHref,
   actionLabel,
+  defaultSort = "sla",
+  pageSize,
 }: {
   complaints: Complaint[];
   emptyTitle: string;
   emptyBody: string;
   actionHref?: string;
   actionLabel?: string;
+  defaultSort?: "sla" | "newest" | "oldest" | "priority";
+  pageSize?: number;
 }) {
   const [q, setQ] = useState("");
   const [category, setCategory] = useState<string>("all");
   const [status, setStatus] = useState<string>("all");
-  const [sort, setSort] = useState<string>("sla");
+  const [sort, setSort] = useState<string>(defaultSort);
+  const [page, setPage] = useState(0);
 
   const filtered = useMemo(() => {
     let list = [...complaints];
@@ -56,22 +62,37 @@ export function TicketBoard({
       if (sort === "sla") return rank(a) - rank(b);
       if (sort === "newest")
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      if (sort === "oldest")
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
       return a.priority.localeCompare(b.priority);
     });
     return list;
   }, [complaints, q, category, status, sort]);
+
+  const visible = pageSize
+    ? pageSlice(filtered, Math.min(page, Math.max(0, Math.ceil(filtered.length / pageSize) - 1)), pageSize)
+    : filtered;
 
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-2 sm:flex-row">
         <Input
           value={q}
-          onChange={(e) => setQ(e.target.value)}
+          onChange={(e) => {
+            setQ(e.target.value);
+            setPage(0);
+          }}
           placeholder="Search ticket ID, title…"
           className="sm:flex-1"
           aria-label="Search complaints"
         />
-        <Select value={category} onValueChange={setCategory}>
+        <Select
+          value={category}
+          onValueChange={(v) => {
+            setCategory(v);
+            setPage(0);
+          }}
+        >
           <SelectTrigger className="sm:w-44" aria-label="Filter category">
             <SelectValue placeholder="Category" />
           </SelectTrigger>
@@ -84,7 +105,13 @@ export function TicketBoard({
             ))}
           </SelectContent>
         </Select>
-        <Select value={status} onValueChange={setStatus}>
+        <Select
+          value={status}
+          onValueChange={(v) => {
+            setStatus(v);
+            setPage(0);
+          }}
+        >
           <SelectTrigger className="sm:w-44" aria-label="Filter status">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
@@ -97,13 +124,20 @@ export function TicketBoard({
             ))}
           </SelectContent>
         </Select>
-        <Select value={sort} onValueChange={setSort}>
+        <Select
+          value={sort}
+          onValueChange={(v) => {
+            setSort(v);
+            setPage(0);
+          }}
+        >
           <SelectTrigger className="sm:w-40" aria-label="Sort">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="oldest">Oldest first</SelectItem>
+            <SelectItem value="newest">Newest first</SelectItem>
             <SelectItem value="sla">SLA status</SelectItem>
-            <SelectItem value="newest">Newest</SelectItem>
             <SelectItem value="priority">Priority</SelectItem>
           </SelectContent>
         </Select>
@@ -117,7 +151,7 @@ export function TicketBoard({
         />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
-          {filtered.map((c) => (
+          {visible.map((c) => (
             <TicketCard
               key={c.id}
               complaint={c}
@@ -126,6 +160,15 @@ export function TicketBoard({
           ))}
         </div>
       )}
+      {pageSize ? (
+        <Pager
+          page={page}
+          pageSize={pageSize}
+          total={filtered.length}
+          onPage={setPage}
+          noun="tickets"
+        />
+      ) : null}
     </div>
   );
 }
