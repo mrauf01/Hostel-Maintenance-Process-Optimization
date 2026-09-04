@@ -20,6 +20,12 @@ import { Input } from "@/components/ui/input";
 import { CATEGORY_LABELS, PRIORITY_LABELS, ROLE_LABELS } from "@/lib/constants";
 import type { Profile, SlaRule, Vendor } from "@/lib/types";
 
+function phoneLine(p: Profile) {
+  const n = p.phone?.trim();
+  if (!n) return "Phone not on file";
+  return n;
+}
+
 export function AdminOps({
   rules,
   staff,
@@ -113,11 +119,10 @@ export function AdminOps({
               <div>
                 <p className="text-sm font-medium">{u.full_name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {u.email}
-                  {u.phone ? ` · ${u.phone}` : ""} ·{" "}
-                  {ROLE_LABELS[u.role] ?? u.role}
+                  {u.email} · {ROLE_LABELS[u.role] ?? u.role}
                   {u.category ? ` · ${CATEGORY_LABELS[u.category] ?? u.category}` : ""}
                 </p>
+                <p className="text-xs font-medium">{phoneLine(u)}</p>
               </div>
               <div className="flex gap-2">
                 <Button
@@ -190,15 +195,14 @@ export function AdminOps({
                   ) : null}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {p.email}
-                  {p.phone ? ` · ${p.phone}` : ""} ·{" "}
-                  {ROLE_LABELS[p.role] ?? p.role}
+                  {p.email} · {ROLE_LABELS[p.role] ?? p.role}
                   {p.category ? ` · ${CATEGORY_LABELS[p.category] ?? p.category}` : ""}
                   {p.hostel_block
                     ? ` · Block ${p.hostel_block}${p.room_number ?? ""}`
                     : ""}
                   {p.approved === false ? " · pending" : ""}
                 </p>
+                <p className="text-xs font-medium">{phoneLine(p)}</p>
               </div>
               <Button
                 size="sm"
@@ -284,17 +288,19 @@ export function AdminOps({
       <div className="space-y-4">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Staff roster</CardTitle>
+          <CardTitle className="text-base">Maintenance staff</CardTitle>
+          <p className="text-sm font-normal text-muted-foreground">
+            Hostel electricians, plumbers, carpenters, lock technicians, and
+            desk staff who receive jobs from this portal.
+          </p>
           </CardHeader>
           <CardContent className="space-y-2">
             {staff.map((s) => (
               <div key={s.id} className="flex items-center justify-between gap-2 text-sm">
                 <div>
                   <p className="font-medium">{s.full_name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {s.email}
-                    {s.phone ? ` · ${s.phone}` : ""}
-                  </p>
+                  <p className="text-xs text-muted-foreground">{s.email}</p>
+                  <p className="text-xs font-medium">{phoneLine(s)}</p>
                 </div>
                 <span className="capitalize text-xs">{s.category}</span>
               </div>
