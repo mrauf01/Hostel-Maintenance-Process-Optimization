@@ -24,18 +24,19 @@ const DEMO = [
 function LoginForm() {
   const router = useRouter();
   const next = useSearchParams().get("next") || "/dashboard";
-  const [email, setEmail] = useState("student@hostel.edu");
-  const [password, setPassword] = useState("demo123");
+  const demo = process.env.NEXT_PUBLIC_DEMO_MODE !== "false";
+  const [email, setEmail] = useState(demo ? "student@hostel.edu" : "");
+  const [password, setPassword] = useState(demo ? "demo123" : "");
   const [pending, start] = useTransition();
-  const demo =
-    process.env.NEXT_PUBLIC_DEMO_MODE !== "false";
 
   return (
     <div className="mx-auto w-full max-w-md rounded-2xl border bg-card p-6 shadow-sm">
       <h1 className="text-2xl font-semibold">{APP_NAME} portal</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Single ERP-style intake for hostel maintenance.
-      </p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {demo
+            ? "Demo portal — pick an account below or sign in with demo123."
+            : "Sign in with the hostel account created in Supabase Auth."}
+        </p>
       <form
         className="mt-6 space-y-4"
         onSubmit={(e) => {

@@ -24,11 +24,12 @@ export async function getCurrentProfile(): Promise<Profile | null> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return null;
+  const userId = user?.id ?? cookies().get(SESSION_COOKIE)?.value;
+  if (!userId) return null;
   const { data } = await supabase
     .from("profiles")
     .select("*")
-    .eq("id", user.id)
+    .eq("id", userId)
     .single();
   return data as Profile | null;
 }
@@ -87,8 +88,19 @@ export async function signUpStudent(input: {
 export async function signInSupabase(email: string, password: string) {
   const supabase = createServerSupabase();
   if (!supabase) return { error: "Supabase is not configured." };
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
   if (error) return { error: error.message };
+  if (data.user) {
+    cookies().set(SESSION_COOKIE, data.user.id, {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 14,
+    });
+  }
   return { ok: true as const };
 }
 

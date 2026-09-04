@@ -1,25 +1,28 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE } from "@/lib/session-cookie";
+import { updateSupabaseSession } from "@/lib/supabase/middleware";
 
 const PUBLIC = ["/login", "/signup"];
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const hasSession = Boolean(request.cookies.get(SESSION_COOKIE)?.value);
+  const demoSession = Boolean(request.cookies.get(SESSION_COOKIE)?.value);
+  const { userId, response } = await updateSupabaseSession(request);
+  const hasSession = demoSession || Boolean(userId);
 
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
     pathname.includes(".")
   ) {
-    return NextResponse.next();
+    return response;
   }
 
   if (PUBLIC.includes(pathname) || pathname === "/") {
     if (hasSession && PUBLIC.includes(pathname)) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
-    return NextResponse.next();
+    return response;
   }
 
   if (!hasSession) {
@@ -29,7 +32,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {
