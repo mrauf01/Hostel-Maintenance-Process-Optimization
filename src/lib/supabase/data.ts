@@ -86,30 +86,36 @@ export async function sbGetComplaint(ticketId: string): Promise<{
   complaint: Complaint;
   events: ComplaintEvent[];
 } | null> {
-  const { data, error } = await db()
+  const id = decodeURIComponent(ticketId).trim();
+  const client = db();
+  let row: Complaint | null = null;
+  const byCode = await client
     .from("complaints")
     .select("*")
-    .or(`ticket_id.eq.${ticketId},id.eq.${ticketId}`)
+    .eq("ticket_id", id)
     .maybeSingle();
-  if (error) {
-    logDb("complaint", error);
-    return null;
+  logDb("complaint_by_ticket", byCode.error);
+  if (byCode.data) row = byCode.data as Complaint;
+  if (!row) {
+    const byId = await client.from("complaints").select("*").eq("id", id).maybeSingle();
+    logDb("complaint_by_id", byId.error);
+    if (byId.data) row = byId.data as Complaint;
   }
-  if (!data) return null;
-  const [hydrated] = await hydrate([data as Complaint]);
-  const { data: events, error: e2 } = await db()
+  if (!row) return null;
+  const [hydrated] = await hydrate([row]);
+  const { data: events, error: e2 } = await client
     .from("complaint_events")
     .select("*")
     .eq("complaint_id", hydrated.id)
     .order("created_at", { ascending: true });
   logDb("complaint_events", e2);
   const profiles = await sbListProfiles();
-  const byId = new Map(profiles.map((p) => [p.id, p]));
+  const byProfile = new Map(profiles.map((p) => [p.id, p]));
   return {
     complaint: hydrated,
     events: ((events ?? []) as ComplaintEvent[]).map((e) => ({
       ...e,
-      actor: e.actor_id ? byId.get(e.actor_id) ?? null : null,
+      actor: e.actor_id ? byProfile.get(e.actor_id) ?? null : null,
     })),
   };
 }

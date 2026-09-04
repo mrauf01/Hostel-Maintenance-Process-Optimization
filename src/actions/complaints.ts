@@ -72,17 +72,14 @@ export async function listComplaintEvents(): Promise<ComplaintEvent[]> {
 
 function filterByRole(all: Complaint[], me: Profile): Complaint[] {
   if (me.role === "admin") return all;
-  if (me.role === "student") return all.filter((c) => c.student_id === me.id);
-  if (me.role === "sc")
-    return all.filter((c) => c.is_urgent || c.status === "escalated");
-  if (me.role === "staff")
-    return all.filter(
-      (c) =>
-        c.assigned_staff_id === me.id ||
-        c.category === me.category ||
-        (me.category === "other" && !c.assigned_staff_id)
-    );
-  return [];
+  return all.filter((c) => {
+    if (c.student_id === me.id || c.logged_by === me.id) return true;
+    if (c.assigned_staff_id === me.id) return true;
+    if (me.role === "sc") return c.is_urgent || c.status === "escalated";
+    if (me.role === "staff")
+      return c.category === me.category || me.category === "other";
+    return false;
+  });
 }
 
 export async function getComplaintByTicket(

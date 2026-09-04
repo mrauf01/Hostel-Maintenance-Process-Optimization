@@ -16,7 +16,8 @@ export default async function TicketPage({
 }) {
   const user = await getCurrentProfile();
   if (!user) redirect("/login");
-  const data = await getComplaintByTicket(params.ticket_id);
+  const ticketId = decodeURIComponent(params.ticket_id);
+  const data = await getComplaintByTicket(ticketId);
   if (!data) notFound();
   const { complaint, events } = data;
   const staff = await listStaff();
