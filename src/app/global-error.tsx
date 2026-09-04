@@ -10,7 +10,7 @@ export default function GlobalError({
   return (
     <html lang="en">
       <body className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center gap-3 px-4 text-center font-sans">
-        <h1 className="text-xl font-semibold">HZL Desk hit an error</h1>
+        <h1 className="text-xl font-semibold">Something went wrong</h1>
         <p className="text-sm text-neutral-600">
           {error.message || "A client-side exception occurred."}
         </p>

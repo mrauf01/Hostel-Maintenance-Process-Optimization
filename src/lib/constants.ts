@@ -1,7 +1,9 @@
 import type { IssueType, Priority, StaffCategory } from "./types";
 
-export const APP_NAME = "HZL Desk";
-export const APP_FULL_NAME = "Hostel Maintenance Desk";
+export const APP_SHORT = "HMP";
+export const APP_NAME = "Hostel Maintenance Portal";
+export const APP_FULL_NAME = "Hostel Maintenance Portal";
+export const TICKET_PREFIX = "HMP";
 export const TARGET_RESOLUTION_DAYS = 2;
 export const ACKNOWLEDGE_TARGET_MINUTES = 15;
 

@@ -1,4 +1,4 @@
-# HZL Desk — Hostel Maintenance Complaint Management
+# Hostel Maintenance Portal
 
 Prototype of the **Hostel Maintenance Process Optimization** project: a single ERP-style portal that takes a complaint from intake through closure, with the explicit goal of cutting resolution lead time from **5 days to 2 days**.
 
@@ -55,7 +55,7 @@ This is a standard Next.js app. Set the same env vars in the Vercel project. The
 
 ## Complaint lifecycle (as implemented)
 
-1. **Intake** — `/complaints/new` (student or registration desk). Unique `HZL-YYYY-NNNNN` ticket ID.
+1. **Intake** — `/complaints/new` (student or registration desk). Unique `HMP-YYYY-NNNNN` ticket ID.
 2. **Auto-triage** — issue type maps to staff category + P1/P2/P3 from `sla_rules` (keywords such as “leak” / “power failure” / lock issues force P1). Desk can override priority.
 3. **Dispatch** — least-busy staff in that category; 15-minute acknowledgement countdown on the ticket.
 4. **Inspection** — staff → In Progress.

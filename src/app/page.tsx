@@ -6,11 +6,10 @@ import {
   Droplets,
   KeyRound,
   Lightbulb,
-  University,
   Wrench,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { APP_NAME } from "@/lib/constants";
+import { APP_NAME, APP_SHORT } from "@/lib/constants";
 import { StatusBadge } from "@/components/status-badge";
 
 const STEPS = [
@@ -33,14 +32,11 @@ export default function HomePage() {
     <div className="min-h-screen">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5">
         <Link href="/" className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-            <University className="h-4 w-4" />
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-[11px] font-bold tracking-wide text-primary-foreground shadow-sm">
+            {APP_SHORT}
           </span>
-          <span className="leading-tight">
-            <span className="block text-sm font-semibold">{APP_NAME}</span>
-            <span className="block text-xs text-muted-foreground">
-              Hostel maintenance
-            </span>
+          <span className="text-sm font-semibold leading-tight sm:text-base">
+            {APP_NAME}
           </span>
         </Link>
         <nav className="flex items-center gap-2">
@@ -98,7 +94,7 @@ export default function HomePage() {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="font-mono text-xs text-muted-foreground">
-                    HZL-2026-01402
+                    HMP-2026-01402
                   </p>
                   <h2 className="mt-1 text-lg font-semibold">
                     Water leak under washbasin

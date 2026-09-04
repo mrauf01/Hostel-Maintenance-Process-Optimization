@@ -33,11 +33,11 @@ function LoginForm() {
 
   return (
     <div className="mx-auto w-full max-w-md rounded-2xl border bg-card p-6 shadow-sm">
-      <h1 className="text-2xl font-semibold">{APP_NAME} portal</h1>
+      <h1 className="text-2xl font-semibold">{APP_NAME}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {demo
             ? "Demo portal — pick an account below or sign in with demo123."
-            : "Sign in with the hostel account created in Supabase Auth."}
+            : "Sign in with your hostel account."}
         </p>
         {err && (
           <p className="mt-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">

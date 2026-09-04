@@ -9,7 +9,7 @@ const sans = Source_Sans_3({
 });
 
 export const metadata: Metadata = {
-  title: "HZL Desk — Hostel Maintenance",
+  title: "Hostel Maintenance Portal",
   description:
     "One desk for hostel complaints: log, triage, dispatch, SLA, and student confirmation.",
 };

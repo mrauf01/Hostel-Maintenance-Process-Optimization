@@ -64,7 +64,7 @@ create table if not exists public.vendors (
   created_at timestamptz not null default now()
 );
 
--- Ticket sequence for human-readable IDs: HZL-YYYY-NNNNN
+-- Ticket sequence for human-readable IDs: HMP-YYYY-NNNNN
 create table if not exists public.ticket_counters (
   year integer primary key,
   last_value integer not null default 0
@@ -83,7 +83,7 @@ begin
   on conflict (year) do update
     set last_value = public.ticket_counters.last_value + 1
   returning last_value into n;
-  return 'HZL-' || y::text || '-' || lpad(n::text, 5, '0');
+  return 'HMP-' || y::text || '-' || lpad(n::text, 5, '0');
 end;
 $$;
 

@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import path from "path";
-import { ACKNOWLEDGE_TARGET_MINUTES, ISSUE_TYPES } from "@/lib/constants";
+import { ACKNOWLEDGE_TARGET_MINUTES, ISSUE_TYPES, TICKET_PREFIX } from "@/lib/constants";
 import { computeDeadline, matchSlaRule, triageIssue } from "@/lib/sla";
 import type {
   AppNotification,
@@ -301,7 +301,7 @@ function makeSeed(): DemoStore {
     const { seq, ...rest } = partial;
     const c: Complaint = {
       ...rest,
-      ticket_id: `HZL-${year}-${String(seq).padStart(5, "0")}`,
+      ticket_id: `${TICKET_PREFIX}-${year}-${String(seq).padStart(5, "0")}`,
     };
     complaints.push(c);
     return c;
@@ -602,7 +602,7 @@ export function hydrateComplaint(c: Complaint): Complaint {
 export function nextTicketId(): string {
   const s = load();
   s.ticket_seq += 1;
-  return `HZL-${s.year}-${String(s.ticket_seq).padStart(5, "0")}`;
+  return `${TICKET_PREFIX}-${s.year}-${String(s.ticket_seq).padStart(5, "0")}`;
 }
 
 export function leastBusyStaff(category: StaffCategory): Profile | undefined {

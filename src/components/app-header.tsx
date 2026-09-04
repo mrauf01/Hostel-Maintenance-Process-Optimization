@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, LogOut, Plus, University } from "lucide-react";
+import { Bell, LogOut, Plus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { APP_NAME, ROLE_LABELS } from "@/lib/constants";
+import { APP_NAME, APP_SHORT, ROLE_LABELS } from "@/lib/constants";
 import type { AppNotification, Profile } from "@/lib/types";
 import { relativeTime } from "@/lib/format";
 
@@ -63,11 +63,11 @@ export function AppHeader({
   return (
     <header className="sticky top-0 z-40 border-b bg-card/90 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4">
-        <Link href={home} className="flex items-center gap-2 font-semibold">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <University className="h-4 w-4" />
+        <Link href={home} className="flex min-w-0 items-center gap-2 font-semibold">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-[10px] font-bold tracking-wide text-primary-foreground">
+            {APP_SHORT}
           </span>
-          <span className="hidden sm:inline">{APP_NAME}</span>
+          <span className="hidden truncate sm:inline">{APP_NAME}</span>
         </Link>
         <nav className="hidden items-center gap-1 text-sm md:flex">
           <Link

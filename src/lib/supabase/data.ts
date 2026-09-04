@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { TICKET_PREFIX } from "@/lib/constants";
 import { computeDeadline, matchSlaRule, triageIssue } from "@/lib/sla";
 import type {
   AppNotification,
@@ -228,7 +229,7 @@ export async function sbCreateComplaint(input: {
     .single();
   if (error) {
     const y = new Date().getFullYear();
-    insert.ticket_id = `HZL-${y}-${String(Date.now()).slice(-5)}`;
+    insert.ticket_id = `${TICKET_PREFIX}-${y}-${String(Date.now()).slice(-5)}`;
     const retry = await db().from("complaints").insert(insert).select("*").single();
     data = retry.data;
     error = retry.error;
