@@ -1,1 +1,1 @@
-export const SESSION_COOKIE = "hzl_session";
+export const SESSION_COOKIE = "hmp_session";

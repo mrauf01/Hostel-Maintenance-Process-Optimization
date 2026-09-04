@@ -2,6 +2,7 @@ import { cache } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { TICKET_PREFIX } from "@/lib/constants";
 import { computeDeadline, matchSlaRule, triageIssue } from "@/lib/sla";
+import { canonicalTicketId, ticketIdLookupKeys } from "@/lib/ticket-id";
 import type {
   AppNotification,
   Complaint,
@@ -76,12 +77,18 @@ async function hydrate(rows: Complaint[]): Promise<Complaint[]> {
       )
     ),
   ];
-  if (!ids.length) return rows;
+  if (!ids.length) {
+    return rows.map((c) => ({
+      ...c,
+      ticket_id: canonicalTicketId(c.ticket_id),
+    }));
+  }
   const { data, error } = await db().from("profiles").select("*").in("id", ids);
   logDb("hydrate_profiles", error);
   const byId = new Map(((data ?? []) as Profile[]).map((p) => [p.id, p]));
   return rows.map((c) => ({
     ...c,
+    ticket_id: canonicalTicketId(c.ticket_id),
     student: byId.get(c.student_id),
     assigned_staff: c.assigned_staff_id
       ? byId.get(c.assigned_staff_id) ?? null
@@ -137,11 +144,11 @@ export async function sbListComplaintSnapshot(
   }
   const { data, error } = await q;
   logDb("complaint_snapshot", error);
-  return (data ?? []) as {
+  return ((data ?? []) as {
     id: string;
     ticket_id: string;
     status: ComplaintStatus;
-  }[];
+  }[]).map((row) => ({ ...row, ticket_id: canonicalTicketId(row.ticket_id) }));
 }
 
 export async function sbGetComplaint(ticketId: string): Promise<{
@@ -151,13 +158,18 @@ export async function sbGetComplaint(ticketId: string): Promise<{
   const id = decodeURIComponent(ticketId).trim();
   const client = db();
   let row: Complaint | null = null;
-  const byCode = await client
-    .from("complaints")
-    .select("*")
-    .eq("ticket_id", id)
-    .maybeSingle();
-  logDb("complaint_by_ticket", byCode.error);
-  if (byCode.data) row = byCode.data as Complaint;
+  for (const key of ticketIdLookupKeys(id)) {
+    const byCode = await client
+      .from("complaints")
+      .select("*")
+      .eq("ticket_id", key)
+      .maybeSingle();
+    logDb("complaint_by_ticket", byCode.error);
+    if (byCode.data) {
+      row = byCode.data as Complaint;
+      break;
+    }
+  }
   if (!row) {
     const byId = await client.from("complaints").select("*").eq("id", id).maybeSingle();
     logDb("complaint_by_id", byId.error);
@@ -320,7 +332,12 @@ export async function sbCreateComplaint(input: {
     error = retry.error;
   }
   if (error) return { error: error.message };
-  const c = data as Complaint;
+  let c = data as Complaint;
+  if (/^HZL-/i.test(c.ticket_id)) {
+    const nextId = canonicalTicketId(c.ticket_id);
+    await db().from("complaints").update({ ticket_id: nextId }).eq("id", c.id);
+    c = { ...c, ticket_id: nextId };
+  }
   const followUp: Promise<unknown>[] = [
     sbEvent(
       c.id,
@@ -367,7 +384,7 @@ export async function sbCreateComplaint(input: {
       )
     );
   }
-  return { ticket_id: c.ticket_id };
+  return { ticket_id: canonicalTicketId(c.ticket_id) };
   } catch (e) {
     const message =
       e instanceof Error ? e.message : "Could not save the ticket to the database.";

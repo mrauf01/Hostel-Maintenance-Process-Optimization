@@ -33,7 +33,7 @@ Use **Switch demo role** in the header to hop accounts without signing out.
 ## Connect Supabase (production)
 
 1. Create a project at [supabase.com](https://supabase.com).
-2. SQL editor → run `supabase/migrations/0001_init.sql`, then `0002_storage.sql`, then `FIX_DATABASE.sql` (adds `approved` and `phone`, repairs recursive RLS, and activates `mrauf1192@gmail.com` as Admin). If the site already talks to Supabase but dashboards fail, **only** `FIX_DATABASE.sql` is required. To add contact numbers on an existing project without re-running the full file, run `supabase/migrations/0006_contact_phone.sql`.
+2. SQL editor → run `supabase/migrations/0001_init.sql`, then `0002_storage.sql`, then `FIX_DATABASE.sql` (adds `approved` and `phone`, repairs recursive RLS, ticket IDs as `HMP-YYYY-NNNNN`, and activates `mrauf1192@gmail.com` as Admin). If the site already talks to Supabase but dashboards fail, **only** `FIX_DATABASE.sql` is required. To add contact numbers on an existing project without re-running the full file, run `supabase/migrations/0006_contact_phone.sql`. If tickets still show `HZL-`, run `supabase/migrations/0005_ticket_prefix_hmp.sql`.
 3. Authentication → enable Email provider. Create staff / Student council member / Admin users, then set `profiles.role` (and `category` for staff) or run `supabase/seed_roles.sql`.
 4. Put keys in `.env.local` and Vercel env:
 

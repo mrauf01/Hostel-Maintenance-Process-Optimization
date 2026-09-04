@@ -19,7 +19,7 @@ import type {
 
 const DATA_PATH =
   process.env.VERCEL || process.env.NODE_ENV === "production"
-    ? path.join("/tmp", "hzl-demo-store.json")
+    ? path.join("/tmp", "hmp-demo-store.json")
     : path.join(process.cwd(), ".data", "demo-store.json");
 
 export type DemoStore = {
@@ -606,7 +606,7 @@ export function hydrateComplaint(c: Complaint): Complaint {
   const staff = c.assigned_staff_id
     ? s.profiles.find((p) => p.id === c.assigned_staff_id)
     : null;
-  return { ...c, student, assigned_staff: staff ?? null };
+  return { ...c, student, assigned_staff: staff ?? null, ticket_id: c.ticket_id.replace(/^HZL-/i, `${TICKET_PREFIX}-`) };
 }
 
 export function nextTicketId(): string {

@@ -14,6 +14,7 @@ import {
 } from "@/lib/demo/store";
 import { computeDeadline, matchSlaRule, triageIssue } from "@/lib/sla";
 import { isDemoMode, isSupabaseConfigured } from "@/lib/mode";
+import { canonicalTicketId, ticketIdLookupKeys } from "@/lib/ticket-id";
 import type {
   Complaint,
   ComplaintEvent,
@@ -117,8 +118,12 @@ export async function getComplaintByTicket(
     }
   }
   const s = getStore();
+  const keys = ticketIdLookupKeys(ticketId);
   const raw = s.complaints.find(
-    (c) => c.ticket_id === ticketId || c.id === ticketId
+    (c) =>
+      c.id === ticketId ||
+      keys.includes(c.ticket_id) ||
+      keys.includes(canonicalTicketId(c.ticket_id))
   );
   if (!raw) return null;
   const complaint = hydrateComplaint(raw);

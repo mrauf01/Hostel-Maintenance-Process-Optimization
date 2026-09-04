@@ -253,3 +253,7 @@ begin
   return 'HMP-' || y::text || '-' || lpad(n::text, 5, '0');
 end;
 $$;
+
+update public.complaints
+set ticket_id = regexp_replace(ticket_id, '^HZL-', 'HMP-')
+where ticket_id like 'HZL-%';
