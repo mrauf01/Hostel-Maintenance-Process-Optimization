@@ -2,7 +2,6 @@ import Link from "next/link";
 import {
   ArrowRight,
   Building2,
-  CheckCircle2,
   Droplets,
   KeyRound,
   Lightbulb,
@@ -10,7 +9,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { APP_NAME, APP_SHORT } from "@/lib/constants";
-import { StatusBadge } from "@/components/status-badge";
 
 const STEPS = [
   { n: "01", title: "Log it", detail: "Student or desk files one form. Photo optional." },
@@ -50,7 +48,7 @@ export default function HomePage() {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 pb-24">
-        <section className="grid items-center gap-10 pt-8 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16 lg:pt-14">
+        <section className="max-w-2xl pt-8 lg:pt-14">
           <div>
             <p className="inline-flex items-center gap-2 rounded-full border bg-card/80 px-3 py-1 text-xs font-medium text-primary">
               <Building2 className="h-3.5 w-3.5" />
@@ -87,55 +85,6 @@ export default function HomePage() {
               ))}
             </div>
           </div>
-
-          <aside className="relative">
-            <div className="absolute -inset-4 -z-10 rounded-[2rem] bg-gradient-to-br from-primary/10 via-transparent to-accent/60 blur-2xl" />
-            <div className="rounded-2xl border bg-card p-5 shadow-lg shadow-primary/5">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-mono text-xs text-muted-foreground">
-                    HMP-2026-01402
-                  </p>
-                  <h2 className="mt-1 text-lg font-semibold">
-                    Water leak under washbasin
-                  </h2>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Block B · Room 214 · Plumbing
-                  </p>
-                </div>
-                <StatusBadge status="assigned" />
-              </div>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <span className="rounded-full border border-primary/20 bg-primary/5 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
-                  P1 – Emergency
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800">
-                  <CheckCircle2 className="h-3 w-3" />
-                  On Track · 1d 4h left
-                </span>
-              </div>
-              <ol className="mt-5 space-y-3 border-t pt-4">
-                {[
-                  { t: "Registered", d: "Logged from student portal", on: true },
-                  { t: "Assigned", d: "AquaFix desk · least busy", on: true },
-                  { t: "In progress", d: "Inspection due", on: false },
-                  { t: "Student confirm", d: "After the completion photo", on: false },
-                ].map((s) => (
-                  <li key={s.t} className="flex gap-3">
-                    <span
-                      className={`mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full ${
-                        s.on ? "bg-primary" : "bg-border"
-                      }`}
-                    />
-                    <div>
-                      <p className="text-sm font-medium">{s.t}</p>
-                      <p className="text-xs text-muted-foreground">{s.d}</p>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          </aside>
         </section>
 
         <section className="mt-20 overflow-hidden rounded-2xl border bg-foreground text-primary-foreground">
