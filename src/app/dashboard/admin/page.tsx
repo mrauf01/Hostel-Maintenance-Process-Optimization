@@ -8,6 +8,7 @@ import {
 } from "@/actions/complaints";
 import { AdminOps } from "@/components/admin-ops";
 import { AppShell } from "@/components/app-shell";
+import { ClientErrorBoundary } from "@/components/client-error-boundary";
 import { KpiDashboard } from "@/components/kpi-dashboard";
 import { RealtimeRefresher } from "@/components/realtime-refresher";
 import { TicketBoard } from "@/components/ticket-board";
@@ -38,14 +39,23 @@ export default async function AdminDashboard() {
         {breached.length} ticket{breached.length === 1 ? "" : "s"} currently
         past SLA.
       </p>
-      <Tabs defaultValue="kpis" className="mt-6">
+      <Tabs defaultValue="ops" className="mt-6">
         <TabsList className="flex flex-wrap">
-          <TabsTrigger value="kpis">KPI dashboard</TabsTrigger>
-          <TabsTrigger value="tickets">All tickets</TabsTrigger>
           <TabsTrigger value="ops">SLA, staff & vendors</TabsTrigger>
+          <TabsTrigger value="tickets">All tickets</TabsTrigger>
+          <TabsTrigger value="kpis">KPI dashboard</TabsTrigger>
         </TabsList>
         <TabsContent value="kpis" className="mt-4">
-          <KpiDashboard complaints={complaints} events={events} />
+          <ClientErrorBoundary
+            fallback={
+              <p className="text-sm text-muted-foreground">
+                KPI charts could not load. Tickets and pending registrations still
+                work in the other tabs.
+              </p>
+            }
+          >
+            <KpiDashboard complaints={complaints} events={events} />
+          </ClientErrorBoundary>
         </TabsContent>
         <TabsContent value="tickets" className="mt-4">
           <TicketBoard

@@ -9,7 +9,12 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await getCurrentProfile();
+  let user = null;
+  try {
+    user = await getCurrentProfile();
+  } catch {
+    redirect("/login?error=session");
+  }
   if (user && user.approved === false) redirect("/pending");
   return children;
 }

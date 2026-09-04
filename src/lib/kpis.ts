@@ -37,7 +37,9 @@ export function computeKpis(
     return d >= from && d <= to;
   };
 
-  let list = complaints.filter((c) => inRange(c.created_at));
+  let list = (complaints ?? []).filter(
+    (c) => c?.created_at && inRange(String(c.created_at))
+  );
   if (filters.category && filters.category !== "all") {
     list = list.filter((c) => c.category === filters.category);
   }
@@ -109,7 +111,8 @@ export function computeKpis(
     { leads: number[]; opened: number; closed: number }
   >();
   for (const c of list) {
-    const day = c.created_at.slice(0, 10);
+    const day = String(c.created_at ?? "").slice(0, 10);
+    if (!day) continue;
     const row = byDay.get(day) ?? { leads: [], opened: 0, closed: 0 };
     row.opened += 1;
     byDay.set(day, row);

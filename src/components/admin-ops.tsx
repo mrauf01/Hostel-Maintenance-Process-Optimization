@@ -56,8 +56,8 @@ export function AdminOps({
               <div>
                 <p className="text-sm font-medium">{u.full_name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {u.email} · {ROLE_LABELS[u.role]}
-                  {u.category ? ` · ${CATEGORY_LABELS[u.category]}` : ""}
+                  {u.email} · {ROLE_LABELS[u.role] ?? u.role}
+                  {u.category ? ` · ${CATEGORY_LABELS[u.category] ?? u.category}` : ""}
                 </p>
               </div>
               <div className="flex gap-2">
@@ -107,7 +107,7 @@ export function AdminOps({
               className="grid grid-cols-2 gap-2 rounded-lg border p-3 sm:grid-cols-4"
             >
               <p className="col-span-2 text-sm font-medium sm:col-span-4">
-                {CATEGORY_LABELS[r.category]} · {PRIORITY_LABELS[r.priority]}
+                {CATEGORY_LABELS[r.category] ?? r.category} · {PRIORITY_LABELS[r.priority] ?? r.priority}
                 {r.issue_label ? ` — ${r.issue_label}` : ""}
               </p>
               <label className="text-xs">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   Bar,
   BarChart,
@@ -17,6 +17,7 @@ import { computeKpis } from "@/lib/kpis";
 import { CATEGORY_LABELS, TARGET_RESOLUTION_DAYS } from "@/lib/constants";
 import type { Complaint, ComplaintEvent, StaffCategory } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ClientErrorBoundary } from "@/components/client-error-boundary";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -26,6 +27,38 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+function ChartFrame({
+  children,
+  empty,
+}: {
+  children: ReactNode;
+  empty?: boolean;
+}) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => setReady(true), []);
+  if (empty) {
+    return (
+      <p className="flex h-full items-center justify-center text-sm text-muted-foreground">
+        No tickets in this date range yet.
+      </p>
+    );
+  }
+  if (!ready) {
+    return <div className="h-full min-h-[16rem] animate-pulse rounded-md bg-muted/50" />;
+  }
+  return (
+    <ClientErrorBoundary
+      fallback={
+        <p className="flex h-full items-center justify-center text-sm text-muted-foreground">
+          Chart could not render. Open the Tickets tab — the rest of the desk still works.
+        </p>
+      }
+    >
+      {children}
+    </ClientErrorBoundary>
+  );
+}
 
 export function KpiDashboard({
   complaints,
@@ -43,15 +76,18 @@ export function KpiDashboard({
   const [category, setCategory] = useState<string>("all");
   const [hidden, setHidden] = useState<Record<string, boolean>>({});
 
-  const kpi = useMemo(
-    () =>
-      computeKpis(complaints, events, {
+  const kpi = useMemo(() => {
+    try {
+      return computeKpis(complaints ?? [], events ?? [], {
         from,
         to,
         category: category as StaffCategory | "all",
-      }),
-    [complaints, events, from, to, category]
-  );
+      });
+    } catch (e) {
+      console.error(e);
+      return computeKpis([], [], { from, to, category: "all" });
+    }
+  }, [complaints, events, from, to, category]);
 
   function toggle(name: string) {
     setHidden((h) => ({ ...h, [name]: !h[name] }));
@@ -60,22 +96,22 @@ export function KpiDashboard({
   const cards = [
     {
       label: "Avg resolution lead time",
-      value: `${kpi.avgResolutionDays.toFixed(2)} days`,
+      value: `${Number(kpi.avgResolutionDays || 0).toFixed(2)} days`,
       hint: `Target ${TARGET_RESOLUTION_DAYS} days`,
     },
     {
       label: "% over 2-day window",
-      value: `${kpi.pctOverTwoDays.toFixed(0)}%`,
+      value: `${Number(kpi.pctOverTwoDays || 0).toFixed(0)}%`,
       hint: "Share of closed tickets slower than 2 days",
     },
     {
       label: "Closure within SLA",
-      value: `${kpi.closureWithinSla.toFixed(0)}%`,
+      value: `${Number(kpi.closureWithinSla || 0).toFixed(0)}%`,
       hint: "Vs configured sla_rules",
     },
     {
       label: "Avg dispatch time",
-      value: `${kpi.avgAssignmentHours.toFixed(2)} h`,
+      value: `${Number(kpi.avgAssignmentHours || 0).toFixed(2)} h`,
       hint: "Created → assigned",
     },
     {
@@ -148,6 +184,7 @@ export function KpiDashboard({
             </CardTitle>
           </CardHeader>
           <CardContent className="h-72">
+            <ChartFrame empty={kpi.trend.length === 0}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={kpi.trend}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -180,6 +217,7 @@ export function KpiDashboard({
                 )}
               </LineChart>
             </ResponsiveContainer>
+            </ChartFrame>
           </CardContent>
         </Card>
 
@@ -188,6 +226,7 @@ export function KpiDashboard({
             <CardTitle className="text-base">Opened vs closed</CardTitle>
           </CardHeader>
           <CardContent className="h-72">
+            <ChartFrame empty={kpi.volume.length === 0}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={kpi.volume}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -206,6 +245,7 @@ export function KpiDashboard({
                 )}
               </BarChart>
             </ResponsiveContainer>
+            </ChartFrame>
           </CardContent>
         </Card>
 
@@ -214,6 +254,7 @@ export function KpiDashboard({
             <CardTitle className="text-base">Backlog by category</CardTitle>
           </CardHeader>
           <CardContent className="h-72">
+            <ChartFrame>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={kpi.backlogByCategory} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" />
@@ -228,6 +269,7 @@ export function KpiDashboard({
                 <Bar dataKey="count" name="Open tickets" fill="hsl(32 90% 52%)" />
               </BarChart>
             </ResponsiveContainer>
+            </ChartFrame>
           </CardContent>
         </Card>
 
@@ -236,6 +278,7 @@ export function KpiDashboard({
             <CardTitle className="text-base">SLA mix (in range)</CardTitle>
           </CardHeader>
           <CardContent className="h-72">
+            <ChartFrame>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={kpi.slaMix}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -245,6 +288,7 @@ export function KpiDashboard({
                 <Bar dataKey="value" name="Tickets" fill="hsl(174 62% 32%)" />
               </BarChart>
             </ResponsiveContainer>
+            </ChartFrame>
           </CardContent>
         </Card>
       </div>

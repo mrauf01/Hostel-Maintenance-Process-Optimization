@@ -20,12 +20,12 @@ export function RealtimeRefresher({
   const [ready, setReady] = useState(false);
 
   const poll = useCallback(async () => {
-    const next = await listComplaintsForUser();
+    const next = await listComplaintsForUser().catch(() => []);
     for (const c of next) {
       const prev = snap.current.get(c.id);
       if (prev && prev !== c.status) {
         toast.message(`${c.ticket_id} updated`, {
-          description: `Now ${c.status.replaceAll("_", " ")}`,
+          description: `Now ${String(c.status ?? "").replaceAll("_", " ")}`,
         });
         router.refresh();
       }
