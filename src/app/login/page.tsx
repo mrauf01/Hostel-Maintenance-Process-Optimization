@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { APP_NAME } from "@/lib/constants";
+import { DbStatus } from "@/components/db-status";
 
 const DEMO = [
   { email: "student@hostel.edu", label: "Student — Aisha" },
@@ -41,10 +42,11 @@ function LoginForm() {
         {err && (
           <p className="mt-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
             Could not open the dashboard. Sign in again. If this keeps happening,
-            set NEXT_PUBLIC_DEMO_MODE to true in Vercel and Redeploy for the full
-            demo.
+            run supabase/FIX_DATABASE.sql in the Supabase SQL Editor, then confirm
+            the service_role key is set on Vercel.
           </p>
         )}
+        <DbStatus />
       <form
         className="mt-6 space-y-4"
         onSubmit={(e) => {

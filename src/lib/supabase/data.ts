@@ -19,9 +19,13 @@ function db() {
   return c;
 }
 
+function logDb(label: string, error: { message: string } | null) {
+  if (error) console.error(`[supabase ${label}]`, error.message);
+}
+
 export async function sbListProfiles(): Promise<Profile[]> {
   const { data, error } = await db().from("profiles").select("*");
-  if (error) throw error;
+  logDb("profiles", error);
   return (data ?? []) as Profile[];
 }
 
@@ -30,19 +34,19 @@ export async function sbListStaff(): Promise<Profile[]> {
     .from("profiles")
     .select("*")
     .eq("role", "staff");
-  if (error) throw error;
+  logDb("staff", error);
   return (data ?? []) as Profile[];
 }
 
 export async function sbListSlaRules(): Promise<SlaRule[]> {
   const { data, error } = await db().from("sla_rules").select("*");
-  if (error) throw error;
+  logDb("sla_rules", error);
   return (data ?? []) as SlaRule[];
 }
 
 export async function sbListVendors(): Promise<Vendor[]> {
   const { data, error } = await db().from("vendors").select("*");
-  if (error) throw error;
+  logDb("vendors", error);
   return (data ?? []) as Vendor[];
 }
 
@@ -51,7 +55,7 @@ export async function sbListEvents(): Promise<ComplaintEvent[]> {
     .from("complaint_events")
     .select("*")
     .order("created_at", { ascending: true });
-  if (error) throw error;
+  logDb("events", error);
   return (data ?? []) as ComplaintEvent[];
 }
 
@@ -73,7 +77,7 @@ export async function sbListComplaints(): Promise<Complaint[]> {
     .from("complaints")
     .select("*")
     .order("created_at", { ascending: false });
-  if (error) throw error;
+  logDb("complaints", error);
   return hydrate((data ?? []) as Complaint[]);
 }
 
@@ -86,7 +90,10 @@ export async function sbGetComplaint(ticketId: string): Promise<{
     .select("*")
     .or(`ticket_id.eq.${ticketId},id.eq.${ticketId}`)
     .maybeSingle();
-  if (error) throw error;
+  if (error) {
+    logDb("complaint", error);
+    return null;
+  }
   if (!data) return null;
   const [hydrated] = await hydrate([data as Complaint]);
   const { data: events, error: e2 } = await db()
@@ -94,7 +101,7 @@ export async function sbGetComplaint(ticketId: string): Promise<{
     .select("*")
     .eq("complaint_id", hydrated.id)
     .order("created_at", { ascending: true });
-  if (e2) throw e2;
+  logDb("complaint_events", e2);
   const profiles = await sbListProfiles();
   const byId = new Map(profiles.map((p) => [p.id, p]));
   return {
@@ -114,7 +121,7 @@ export async function sbListNotifications(
     .select("*")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
-  if (error) throw error;
+  logDb("notifications", error);
   return (data ?? []) as AppNotification[];
 }
 

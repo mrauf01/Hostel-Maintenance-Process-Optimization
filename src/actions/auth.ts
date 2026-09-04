@@ -37,14 +37,18 @@ export async function getCurrentProfile(): Promise<Profile | null> {
 
   const admin = createAdminClient();
   const reader = admin ?? supabase;
-  const { data } = await reader
+  const { data, error } = await reader
     .from("profiles")
     .select("*")
     .eq("id", userId)
     .maybeSingle();
+  if (error) {
+    console.error("[profiles]", error.message);
+  }
   if (data) {
     const p = data as Profile;
-    return { ...p, approved: p.approved !== false };
+    const approved = p.role === "admin" ? true : p.approved !== false;
+    return { ...p, approved };
   }
 
   if (admin && user?.email) {
@@ -61,8 +65,13 @@ export async function getCurrentProfile(): Promise<Profile | null> {
       created_at: new Date().toISOString(),
       approved: false,
     };
-    await admin.from("profiles").upsert(created);
-    return created;
+    const first = await admin.from("profiles").upsert(created);
+    if (first.error && /approved/i.test(first.error.message)) {
+      const { approved: _a, ...withoutApproved } = created;
+      void _a;
+      await admin.from("profiles").upsert(withoutApproved);
+    }
+    return { ...created, approved: created.role === "admin" };
   }
   return null;
 }
@@ -159,7 +168,7 @@ export async function signUpAccount(input: {
   if (error) return { error: error.message };
   const admin = createAdminClient();
   if (admin && data.user) {
-    await admin.from("profiles").upsert({
+    const row = {
       id: data.user.id,
       full_name: input.full_name,
       email: input.email,
@@ -168,7 +177,16 @@ export async function signUpAccount(input: {
       hostel_block: input.hostel_block ?? null,
       room_number: input.room_number ?? null,
       approved: false,
-    });
+    };
+    const first = await admin.from("profiles").upsert(row);
+    if (first.error && /approved/i.test(first.error.message)) {
+      const { approved: _a, ...withoutApproved } = row;
+      void _a;
+      const retry = await admin.from("profiles").upsert(withoutApproved);
+      if (retry.error) return { error: retry.error.message };
+    } else if (first.error) {
+      return { error: first.error.message };
+    }
     cookies().set(SESSION_COOKIE, data.user.id, {
       httpOnly: true,
       sameSite: "lax",
@@ -187,8 +205,17 @@ export async function listPendingAccounts(): Promise<Profile[]> {
   }
   const admin = createAdminClient();
   if (!admin) return [];
-  const { data } = await admin.from("profiles").select("*").eq("approved", false);
-  return (data ?? []) as Profile[];
+  try {
+    const { data, error } = await admin.from("profiles").select("*");
+    if (error) {
+      console.error("[pending accounts]", error.message);
+      return [];
+    }
+    return ((data ?? []) as Profile[]).filter((p) => p.approved === false);
+  } catch (e) {
+    console.error(e);
+    return [];
+  }
 }
 
 export async function setAccountApproval(id: string, approved: boolean) {

@@ -91,11 +91,16 @@ export async function getComplaintByTicket(
   const me = await getCurrentProfile();
   if (!me) return null;
   if (liveDb()) {
-    const { sbGetComplaint } = await import("@/lib/supabase/data");
-    const found = await sbGetComplaint(ticketId);
-    if (!found) return null;
-    if (!filterByRole([found.complaint], me).length) return null;
-    return found;
+    try {
+      const { sbGetComplaint } = await import("@/lib/supabase/data");
+      const found = await sbGetComplaint(ticketId);
+      if (!found) return null;
+      if (!filterByRole([found.complaint], me).length) return null;
+      return found;
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
   }
   const s = getStore();
   const raw = s.complaints.find(
@@ -120,24 +125,39 @@ export async function getComplaintByTicket(
 
 export async function listSlaRules(): Promise<SlaRule[]> {
   if (liveDb()) {
-    const { sbListSlaRules } = await import("@/lib/supabase/data");
-    return sbListSlaRules();
+    try {
+      const { sbListSlaRules } = await import("@/lib/supabase/data");
+      return await sbListSlaRules();
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
   }
   return getStore().sla_rules;
 }
 
 export async function listStaff(): Promise<Profile[]> {
   if (liveDb()) {
-    const { sbListStaff } = await import("@/lib/supabase/data");
-    return sbListStaff();
+    try {
+      const { sbListStaff } = await import("@/lib/supabase/data");
+      return await sbListStaff();
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
   }
   return getStore().profiles.filter((p) => p.role === "staff");
 }
 
 export async function listVendors(): Promise<Vendor[]> {
   if (liveDb()) {
-    const { sbListVendors } = await import("@/lib/supabase/data");
-    return sbListVendors();
+    try {
+      const { sbListVendors } = await import("@/lib/supabase/data");
+      return await sbListVendors();
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
   }
   return getStore().vendors;
 }
@@ -146,10 +166,15 @@ export async function listProfiles(): Promise<Profile[]> {
   const me = await getCurrentProfile();
   if (!me) return [];
   if (liveDb()) {
-    const { sbListProfiles } = await import("@/lib/supabase/data");
-    const all = await sbListProfiles();
-    if (me.role === "admin" || me.role === "staff" || me.role === "sc") return all;
-    return [me];
+    try {
+      const { sbListProfiles } = await import("@/lib/supabase/data");
+      const all = await sbListProfiles();
+      if (me.role === "admin" || me.role === "staff" || me.role === "sc") return all;
+      return [me];
+    } catch (e) {
+      console.error(e);
+      return [me];
+    }
   }
   if (me.role === "admin" || me.role === "staff" || me.role === "sc") {
     return getStore().profiles;
@@ -161,8 +186,13 @@ export async function listNotifications(): Promise<AppNotification[]> {
   const me = await getCurrentProfile();
   if (!me) return [];
   if (liveDb()) {
-    const { sbListNotifications } = await import("@/lib/supabase/data");
-    return sbListNotifications(me.id);
+    try {
+      const { sbListNotifications } = await import("@/lib/supabase/data");
+      return await sbListNotifications(me.id);
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
   }
   return getStore()
     .notifications.filter((n) => n.user_id === me.id)

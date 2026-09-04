@@ -33,8 +33,8 @@ Use **Switch demo role** in the header to hop accounts without signing out.
 ## Connect Supabase (production)
 
 1. Create a project at [supabase.com](https://supabase.com).
-2. SQL editor → run `supabase/migrations/0001_init.sql` then `0002_storage.sql` (or `supabase db push` if you use the CLI).
-3. Authentication → enable Email provider. Create staff/SC/Admin users, then set `profiles.role` (and `category` for staff).
+2. SQL editor → run `supabase/migrations/0001_init.sql`, then `0002_storage.sql`, then `FIX_DATABASE.sql` (adds `approved`, repairs recursive RLS, and activates `mrauf1192@gmail.com` as Admin). If the site already talks to Supabase but dashboards fail, **only** `FIX_DATABASE.sql` is required.
+3. Authentication → enable Email provider. Create staff/SC/Admin users, then set `profiles.role` (and `category` for staff) or run `supabase/seed_roles.sql`.
 4. Put keys in `.env.local` and Vercel env:
 
 ```
@@ -89,7 +89,9 @@ SLA status **On Track / At Risk / Breached** is computed from `created_at` + the
 
 ## RLS (when using Supabase)
 
-See `supabase/migrations/0001_init.sql`. Students see/insert own tickets and may update to confirm or reopen. Staff see their category / assignments. SC sees `is_urgent` or `status = escalated`. Admin sees everything, including `sla_rules`.
+See `supabase/migrations/0001_init.sql` plus `0004_fix_rls_and_approval.sql`. Policies use `my_role()` / `my_category()` so they do not recurse on `profiles`. Students see/insert own tickets and may update to confirm or reopen. Staff see their category / assignments. SC sees `is_urgent` or `status = escalated`. Admin sees everything, including `sla_rules`.
+
+`GET /api/health` reports whether Postgres tables and the service role key are working (no secrets in the response).
 
 ## Scripts
 
