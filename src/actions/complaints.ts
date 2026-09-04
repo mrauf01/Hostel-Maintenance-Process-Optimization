@@ -248,11 +248,11 @@ export async function createComplaint(input: {
 }): Promise<{ error?: string; ticket_id?: string }> {
   const me = await getCurrentProfile();
   if (!me) return { error: "Sign in required." };
-  if (!input.title.trim() || input.title.trim().length < 8) {
-    return { error: "Give a short title (at least 8 characters)." };
+  if (!input.title.trim()) {
+    return { error: "Enter a title." };
   }
-  if (!input.description.trim() || input.description.trim().length < 20) {
-    return { error: "Describe the issue in at least 20 characters." };
+  if (!input.description.trim()) {
+    return { error: "Describe what is happening." };
   }
 
   const studentId =

@@ -52,8 +52,8 @@ export function ComplaintForm({
 
   function validate() {
     const e: Record<string, string> = {};
-    if (title.trim().length < 8) e.title = "At least 8 characters.";
-    if (description.trim().length < 20) e.description = "At least 20 characters.";
+    if (!title.trim()) e.title = "Enter a title.";
+    if (!description.trim()) e.description = "Describe what is happening.";
     if (!issue) e.issue = "Pick an issue type so we can auto-triage.";
     if ((role === "staff" || role === "admin") && !studentId) e.student = "Select the student.";
     setErrors(e);
@@ -163,7 +163,7 @@ export function ComplaintForm({
           value={title}
           onChange={(e) => {
             setTitle(e.target.value);
-            if (e.target.value.trim().length >= 8)
+            if (e.target.value.trim())
               setErrors((x) => ({ ...x, title: "" }));
           }}
           placeholder="e.g. Water leak under washbasin"
@@ -188,7 +188,7 @@ export function ComplaintForm({
           value={description}
           onChange={(e) => {
             setDescription(e.target.value);
-            if (e.target.value.trim().length >= 20)
+            if (e.target.value.trim())
               setErrors((x) => ({ ...x, description: "" }));
           }}
           placeholder="Room, when it started, anything you’ve already tried…"
