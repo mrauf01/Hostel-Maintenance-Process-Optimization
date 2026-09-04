@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SIGNUP_ROLES } from "@/lib/constants";
+import { digitsOnlyPhone } from "@/lib/phone";
 import { cn } from "@/lib/utils";
 
 export default function SignupPage() {
@@ -108,12 +109,13 @@ export default function SignupPage() {
               id="phone"
               type="tel"
               required
-              inputMode="tel"
+              inputMode="numeric"
               autoComplete="tel"
-              placeholder="10–15 digits, with country code if needed"
+              maxLength={10}
+              pattern="[0-9]{10}"
               value={form.phone}
               onChange={(e) =>
-                setForm((f) => ({ ...f, phone: e.target.value }))
+                setForm((f) => ({ ...f, phone: digitsOnlyPhone(e.target.value) }))
               }
             />
           </div>
