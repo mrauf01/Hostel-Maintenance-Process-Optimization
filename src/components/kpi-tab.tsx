@@ -6,7 +6,10 @@ import { listComplaintEvents } from "@/actions/complaints";
 import type { Complaint, ComplaintEvent } from "@/lib/types";
 
 const KpiDashboard = dynamic(
-  () => import("@/components/kpi-dashboard").then((m) => m.KpiDashboard),
+  () =>
+    import("@/components/kpi-dashboard").then((m) => ({
+      default: m.KpiDashboard,
+    })),
   {
     ssr: false,
     loading: () => (
