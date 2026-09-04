@@ -45,11 +45,12 @@ export function AppHeader({
           if (live) setNotes([]);
         });
     };
-    load();
-    const t = setInterval(load, 20000);
+    const start = window.setTimeout(load, 1500);
+    const t = window.setInterval(load, 60000);
     return () => {
       live = false;
-      clearInterval(t);
+      window.clearTimeout(start);
+      window.clearInterval(t);
     };
   }, [user.id]);
 

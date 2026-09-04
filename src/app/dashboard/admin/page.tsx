@@ -1,16 +1,13 @@
-import { getCurrentProfile, listPendingAccounts } from "@/actions/auth";
+import { getCurrentProfile } from "@/actions/auth";
 import {
-  listComplaintEvents,
   listComplaintsForUser,
   listProfiles,
   listSlaRules,
-  listStaff,
   listVendors,
 } from "@/actions/complaints";
 import { AdminOps } from "@/components/admin-ops";
 import { AppShell } from "@/components/app-shell";
-import { ClientErrorBoundary } from "@/components/client-error-boundary";
-import { KpiDashboard } from "@/components/kpi-dashboard";
+import { KpiTab } from "@/components/kpi-tab";
 import { RealtimeRefresher } from "@/components/realtime-refresher";
 import { TicketBoard } from "@/components/ticket-board";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -20,16 +17,14 @@ export default async function AdminDashboard() {
   const user = await getCurrentProfile();
   if (!user) redirect("/login");
   if (user.role !== "admin") redirect("/dashboard");
-  const [complaints, events, rules, staff, vendors, pendingUsers, people] =
-    await Promise.all([
-      listComplaintsForUser(),
-      listComplaintEvents(),
-      listSlaRules(),
-      listStaff(),
-      listVendors(),
-      listPendingAccounts(),
-      listProfiles(),
-    ]);
+  const [complaints, rules, vendors, people] = await Promise.all([
+    listComplaintsForUser(),
+    listSlaRules(),
+    listVendors(),
+    listProfiles(),
+  ]);
+  const staff = people.filter((p) => p.role === "staff");
+  const pendingUsers = people.filter((p) => p.approved === false);
   const breached = complaints.filter((c) => {
     if (c.status === "resolved") return false;
     return new Date(c.sla_deadline).getTime() < Date.now();
@@ -51,16 +46,7 @@ export default async function AdminDashboard() {
           <TabsTrigger value="kpis">KPI dashboard</TabsTrigger>
         </TabsList>
         <TabsContent value="kpis" className="mt-4">
-          <ClientErrorBoundary
-            fallback={
-              <p className="text-sm text-muted-foreground">
-                KPI charts could not load. Tickets and pending registrations still
-                work in the other tabs.
-              </p>
-            }
-          >
-            <KpiDashboard complaints={complaints} events={events} />
-          </ClientErrorBoundary>
+          <KpiTab complaints={complaints} />
         </TabsContent>
         <TabsContent value="tickets" className="mt-4">
           <TicketBoard

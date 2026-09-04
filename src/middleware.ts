@@ -6,17 +6,23 @@ const PUBLIC = ["/login", "/signup", "/pending"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const demoSession = Boolean(request.cookies.get(SESSION_COOKIE)?.value);
-  const { userId, response } = await updateSupabaseSession(request);
-  const hasSession = demoSession || Boolean(userId);
-
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
     pathname.includes(".")
   ) {
-    return response;
+    return NextResponse.next();
   }
+
+  const sessionCookie = Boolean(request.cookies.get(SESSION_COOKIE)?.value);
+  // Session cookie is enough to let the request through — skip a network
+  // round-trip to Supabase Auth on every navigation.
+  if (sessionCookie) {
+    return NextResponse.next({ request });
+  }
+
+  const { userId, response } = await updateSupabaseSession(request);
+  const hasSession = Boolean(userId);
 
   // Never bounce /login ↔ /dashboard here. A cookie without a profile
   // would otherwise loop and render a blank page.

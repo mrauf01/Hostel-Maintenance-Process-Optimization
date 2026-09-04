@@ -194,12 +194,17 @@ export async function listPendingAccounts(): Promise<Profile[]> {
   const admin = createAdminClient();
   if (!admin) return [];
   try {
-    const { data, error } = await admin.from("profiles").select("*");
+    const { data, error } = await admin
+      .from("profiles")
+      .select("*")
+      .eq("approved", false);
     if (error) {
       console.error("[pending accounts]", error.message);
-      return [];
+      return ((await admin.from("profiles").select("*")).data ?? []).filter(
+        (p) => (p as Profile).approved === false
+      ) as Profile[];
     }
-    return ((data ?? []) as Profile[]).filter((p) => p.approved === false);
+    return (data ?? []) as Profile[];
   } catch (e) {
     console.error(e);
     return [];

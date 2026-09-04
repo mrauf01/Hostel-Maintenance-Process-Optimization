@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { listComplaintsForUser } from "@/actions/complaints";
+import { listComplaintStatusSnapshot } from "@/actions/complaints";
 import type { Complaint } from "@/lib/types";
 
 export function RealtimeRefresher({
@@ -20,7 +20,7 @@ export function RealtimeRefresher({
 
   const poll = useCallback(async () => {
     if (typeof document !== "undefined" && document.hidden) return;
-    const next = await listComplaintsForUser().catch(() => []);
+    const next = await listComplaintStatusSnapshot().catch(() => []);
     let changed = false;
     for (const c of next) {
       const prev = snap.current.get(c.id);
@@ -40,7 +40,7 @@ export function RealtimeRefresher({
   }, [initial, userId]);
 
   useEffect(() => {
-    const t = setInterval(poll, 20000);
+    const t = setInterval(poll, 45000);
     const onVis = () => {
       if (!document.hidden) void poll();
     };

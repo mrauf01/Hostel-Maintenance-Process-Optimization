@@ -28,7 +28,10 @@ import type {
 } from "@/lib/types";
 
 function touchPaths(ticketId?: string) {
-  revalidatePath("/dashboard", "layout");
+  revalidatePath("/dashboard/student");
+  revalidatePath("/dashboard/staff");
+  revalidatePath("/dashboard/sc");
+  revalidatePath("/dashboard/admin");
   if (ticketId) revalidatePath(`/complaints/${ticketId}`);
 }
 
@@ -42,7 +45,7 @@ export async function listComplaintsForUser(): Promise<Complaint[]> {
   if (liveDb()) {
     try {
       const { sbListComplaints } = await import("@/lib/supabase/data");
-      return filterByRole(await sbListComplaints(), me);
+      return filterByRole(await sbListComplaints(me), me);
     } catch (e) {
       console.error(e);
       return [];
@@ -50,6 +53,25 @@ export async function listComplaintsForUser(): Promise<Complaint[]> {
   }
   const all = getStore().complaints.map(hydrateComplaint);
   return filterByRole(all, me);
+}
+
+export async function listComplaintStatusSnapshot(): Promise<
+  { id: string; ticket_id: string; status: ComplaintStatus }[]
+> {
+  const me = await getCurrentProfile();
+  if (!me) return [];
+  if (liveDb()) {
+    try {
+      const { sbListComplaintSnapshot } = await import("@/lib/supabase/data");
+      return await sbListComplaintSnapshot(me);
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
+  }
+  return filterByRole(getStore().complaints.map(hydrateComplaint), me).map(
+    (c) => ({ id: c.id, ticket_id: c.ticket_id, status: c.status })
+  );
 }
 
 export async function listComplaintEvents(): Promise<ComplaintEvent[]> {

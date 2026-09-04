@@ -19,16 +19,25 @@ export const getCurrentProfile = cache(async (): Promise<Profile | null> => {
     const p = getStore().profiles.find((x) => x.id === id) ?? null;
     return p ? { ...p, approved: p.approved !== false } : null;
   }
+  const cookieId = cookies().get(SESSION_COOKIE)?.value;
   const supabase = createServerSupabase();
-  if (!supabase) return null;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const userId = user?.id ?? cookies().get(SESSION_COOKIE)?.value;
+  let user: {
+    id: string;
+    email?: string;
+    user_metadata?: Record<string, unknown>;
+  } | null = null;
+
+  if (!cookieId) {
+    if (!supabase) return null;
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  }
+  const userId = cookieId ?? user?.id;
   if (!userId) return null;
 
   const admin = createAdminClient();
   const reader = admin ?? supabase;
+  if (!reader) return null;
   const { data, error } = await reader
     .from("profiles")
     .select("*")

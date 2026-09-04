@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { TICKET_PREFIX } from "@/lib/constants";
 import { computeDeadline, matchSlaRule, triageIssue } from "@/lib/sla";
@@ -24,11 +25,11 @@ function logDb(label: string, error: { message: string } | null) {
   if (error) console.error(`[supabase ${label}]`, error.message);
 }
 
-export async function sbListProfiles(): Promise<Profile[]> {
+export const sbListProfiles = cache(async (): Promise<Profile[]> => {
   const { data, error } = await db().from("profiles").select("*");
   logDb("profiles", error);
   return (data ?? []) as Profile[];
-}
+});
 
 export async function sbListStaff(): Promise<Profile[]> {
   const { data, error } = await db()
@@ -52,18 +53,33 @@ export async function sbListVendors(): Promise<Vendor[]> {
 }
 
 export async function sbListEvents(): Promise<ComplaintEvent[]> {
+  const since = new Date();
+  since.setDate(since.getDate() - 90);
   const { data, error } = await db()
     .from("complaint_events")
     .select("*")
-    .order("created_at", { ascending: true });
+    .gte("created_at", since.toISOString())
+    .order("created_at", { ascending: true })
+    .limit(4000);
   logDb("events", error);
   return (data ?? []) as ComplaintEvent[];
 }
 
 async function hydrate(rows: Complaint[]): Promise<Complaint[]> {
   if (!rows.length) return [];
-  const profiles = await sbListProfiles();
-  const byId = new Map(profiles.map((p) => [p.id, p]));
+  const ids = [
+    ...new Set(
+      rows.flatMap((c) =>
+        [c.student_id, c.assigned_staff_id, c.logged_by].filter(
+          (x): x is string => Boolean(x)
+        )
+      )
+    ),
+  ];
+  if (!ids.length) return rows;
+  const { data, error } = await db().from("profiles").select("*").in("id", ids);
+  logDb("hydrate_profiles", error);
+  const byId = new Map(((data ?? []) as Profile[]).map((p) => [p.id, p]));
   return rows.map((c) => ({
     ...c,
     student: byId.get(c.student_id),
@@ -73,13 +89,59 @@ async function hydrate(rows: Complaint[]): Promise<Complaint[]> {
   }));
 }
 
-export async function sbListComplaints(): Promise<Complaint[]> {
-  const { data, error } = await db()
+function complaintsForRole(me: Profile) {
+  const q = db()
     .from("complaints")
     .select("*")
     .order("created_at", { ascending: false });
+  if (me.role === "admin") return q;
+  if (me.role === "student") {
+    return q.or(`student_id.eq.${me.id},logged_by.eq.${me.id}`);
+  }
+  if (me.role === "sc") {
+    return q.or("is_urgent.eq.true,status.eq.escalated");
+  }
+  if (me.role === "staff" && me.category && me.category !== "other") {
+    return q.or(
+      `category.eq.${me.category},assigned_staff_id.eq.${me.id},logged_by.eq.${me.id}`
+    );
+  }
+  return q;
+}
+
+export async function sbListComplaints(me?: Profile): Promise<Complaint[]> {
+  const q = me
+    ? complaintsForRole(me)
+    : db().from("complaints").select("*").order("created_at", { ascending: false });
+  const { data, error } = await q;
   logDb("complaints", error);
   return hydrate((data ?? []) as Complaint[]);
+}
+
+export async function sbListComplaintSnapshot(
+  me: Profile
+): Promise<{ id: string; ticket_id: string; status: ComplaintStatus }[]> {
+  let q = db()
+    .from("complaints")
+    .select("id,ticket_id,status")
+    .order("created_at", { ascending: false })
+    .limit(200);
+  if (me.role === "student") {
+    q = q.or(`student_id.eq.${me.id},logged_by.eq.${me.id}`);
+  } else if (me.role === "sc") {
+    q = q.or("is_urgent.eq.true,status.eq.escalated");
+  } else if (me.role === "staff" && me.category && me.category !== "other") {
+    q = q.or(
+      `category.eq.${me.category},assigned_staff_id.eq.${me.id},logged_by.eq.${me.id}`
+    );
+  }
+  const { data, error } = await q;
+  logDb("complaint_snapshot", error);
+  return (data ?? []) as {
+    id: string;
+    ticket_id: string;
+    status: ComplaintStatus;
+  }[];
 }
 
 export async function sbGetComplaint(ticketId: string): Promise<{
@@ -109,8 +171,24 @@ export async function sbGetComplaint(ticketId: string): Promise<{
     .eq("complaint_id", hydrated.id)
     .order("created_at", { ascending: true });
   logDb("complaint_events", e2);
-  const profiles = await sbListProfiles();
-  const byProfile = new Map(profiles.map((p) => [p.id, p]));
+  const actorIds = [
+    ...new Set(
+      ((events ?? []) as ComplaintEvent[])
+        .map((e) => e.actor_id)
+        .filter((x): x is string => Boolean(x))
+    ),
+  ].filter((id) => id !== hydrated.student_id && id !== hydrated.assigned_staff_id);
+  let extra: Profile[] = [];
+  if (actorIds.length) {
+    const more = await client.from("profiles").select("*").in("id", actorIds);
+    extra = (more.data ?? []) as Profile[];
+  }
+  const byProfile = new Map<string, Profile>();
+  if (hydrated.student) byProfile.set(hydrated.student.id, hydrated.student);
+  if (hydrated.assigned_staff) {
+    byProfile.set(hydrated.assigned_staff.id, hydrated.assigned_staff);
+  }
+  for (const p of extra) byProfile.set(p.id, p);
   return {
     complaint: hydrated,
     events: ((events ?? []) as ComplaintEvent[]).map((e) => ({
@@ -127,7 +205,8 @@ export async function sbListNotifications(
     .from("notifications")
     .select("*")
     .eq("user_id", userId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(20);
   logDb("notifications", error);
   return (data ?? []) as AppNotification[];
 }
