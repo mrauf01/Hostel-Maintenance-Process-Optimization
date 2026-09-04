@@ -2,6 +2,7 @@ import { getCurrentProfile, listPendingAccounts } from "@/actions/auth";
 import {
   listComplaintEvents,
   listComplaintsForUser,
+  listProfiles,
   listSlaRules,
   listStaff,
   listVendors,
@@ -19,7 +20,7 @@ export default async function AdminDashboard() {
   const user = await getCurrentProfile();
   if (!user) redirect("/login");
   if (user.role !== "admin") redirect("/dashboard");
-  const [complaints, events, rules, staff, vendors, pendingUsers] =
+  const [complaints, events, rules, staff, vendors, pendingUsers, people] =
     await Promise.all([
       listComplaintsForUser(),
       listComplaintEvents(),
@@ -27,6 +28,7 @@ export default async function AdminDashboard() {
       listStaff(),
       listVendors(),
       listPendingAccounts(),
+      listProfiles(),
     ]);
   const breached = complaints.filter((c) => {
     if (c.status === "resolved") return false;
@@ -73,6 +75,8 @@ export default async function AdminDashboard() {
             staff={staff}
             vendors={vendors}
             pendingUsers={pendingUsers}
+            people={people}
+            wardenId={user.id}
           />
         </TabsContent>
       </Tabs>

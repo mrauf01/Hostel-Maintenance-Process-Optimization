@@ -11,6 +11,7 @@ import {
   findUserByEmail,
   getStore,
   setApproved,
+  removeAccount,
 } from "@/lib/demo/store";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -191,6 +192,28 @@ export async function setAccountApproval(id: string, approved: boolean) {
   if (error) return { error: error.message };
   revalidatePath("/dashboard/admin");
   return { ok: true as const };
+}
+
+export async function removeRegisteredPerson(id: string) {
+  const me = await getCurrentProfile();
+  if (me?.role !== "admin") return { error: "Admin only." };
+  if (id === me.id) return { error: "You cannot remove your own account." };
+  if (!live()) {
+    removeAccount(id);
+    revalidatePath("/dashboard", "layout");
+    return { ok: true as const };
+  }
+  try {
+    const { sbRemoveRegisteredUser } = await import("@/lib/supabase/data");
+    const res = await sbRemoveRegisteredUser(id);
+    if (res.error) return { error: res.error };
+    revalidatePath("/dashboard", "layout");
+    return { ok: true as const };
+  } catch (e) {
+    return {
+      error: e instanceof Error ? e.message : "Could not remove this account.",
+    };
+  }
 }
 
 export async function signOut() {

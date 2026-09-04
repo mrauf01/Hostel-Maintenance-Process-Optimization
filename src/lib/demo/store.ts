@@ -706,6 +706,29 @@ export function setApproved(id: string, approved: boolean) {
   persist();
 }
 
+export function removeAccount(id: string) {
+  const s = load();
+  const theirs = s.complaints.filter((c) => c.student_id === id).map((c) => c.id);
+  s.complaints = s.complaints.filter((c) => c.student_id !== id);
+  for (const c of s.complaints) {
+    if (c.assigned_staff_id === id) c.assigned_staff_id = null;
+    if (c.logged_by === id) c.logged_by = null;
+  }
+  s.events = s.events.filter(
+    (e) => !theirs.includes(e.complaint_id)
+  );
+  for (const e of s.events) {
+    if (e.actor_id === id) e.actor_id = null;
+  }
+  s.notifications = s.notifications.filter(
+    (n) => n.user_id !== id && (!n.complaint_id || !theirs.includes(n.complaint_id))
+  );
+  const gone = s.profiles.find((p) => p.id === id);
+  s.profiles = s.profiles.filter((p) => p.id !== id);
+  if (gone) delete s.passwords[gone.email.toLowerCase()];
+  persist();
+}
+
 export function createStudent(input: {
   full_name: string;
   email: string;

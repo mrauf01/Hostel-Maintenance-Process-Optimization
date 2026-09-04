@@ -1,12 +1,20 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { setAccountApproval } from "@/actions/auth";
+import { removeRegisteredPerson, setAccountApproval } from "@/actions/auth";
 import { updateSlaRule, updateVendor } from "@/actions/complaints";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { CATEGORY_LABELS, PRIORITY_LABELS, ROLE_LABELS } from "@/lib/constants";
 import type { Profile, SlaRule, Vendor } from "@/lib/types";
@@ -16,14 +24,20 @@ export function AdminOps({
   staff,
   vendors,
   pendingUsers,
+  people,
+  wardenId,
 }: {
   rules: SlaRule[];
   staff: Profile[];
   vendors: Vendor[];
   pendingUsers: Profile[];
+  people: Profile[];
+  wardenId: string;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
+  const [query, setQuery] = useState("");
+  const [removing, setRemoving] = useState<Profile | null>(null);
   const [draft, setDraft] = useState(
     Object.fromEntries(
       rules.map((r) => [
@@ -32,6 +46,30 @@ export function AdminOps({
       ])
     )
   );
+
+  const filteredPeople = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const list = [...people].sort((a, b) => a.full_name.localeCompare(b.full_name));
+    if (!q) return list;
+    return list.filter(
+      (p) =>
+        p.full_name.toLowerCase().includes(q) ||
+        p.email.toLowerCase().includes(q) ||
+        (ROLE_LABELS[p.role] ?? p.role).toLowerCase().includes(q)
+    );
+  }, [people, query]);
+
+  function remove(person: Profile) {
+    start(async () => {
+      const res = await removeRegisteredPerson(person.id);
+      if (res.error) toast.error(res.error);
+      else {
+        toast.success(`${person.full_name} was removed`);
+        setRemoving(null);
+        router.refresh();
+      }
+    });
+  }
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
@@ -79,19 +117,70 @@ export function AdminOps({
                 </Button>
                 <Button
                   size="sm"
-                  variant="outline"
+                  variant="destructive"
                   disabled={pending}
-                  onClick={() =>
-                    start(async () => {
-                      const res = await setAccountApproval(u.id, false);
-                      if (res.error) toast.error(res.error);
-                      else toast.message("Left pending");
-                    })
-                  }
+                  onClick={() => setRemoving(u)}
                 >
-                  Keep pending
+                  Remove
                 </Button>
               </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card className="lg:col-span-2">
+        <CardHeader className="gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <CardTitle className="text-base">
+            Registered people ({people.length})
+          </CardTitle>
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search name or email…"
+            className="sm:max-w-xs"
+            aria-label="Search registered people"
+          />
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <p className="text-sm text-muted-foreground">
+            The warden can remove any account except their own. Their tickets
+            are deleted; jobs assigned to them go back to the queue.
+          </p>
+          {filteredPeople.length === 0 && (
+            <p className="text-sm text-muted-foreground">No matching accounts.</p>
+          )}
+          {filteredPeople.map((p) => (
+            <div
+              key={p.id}
+              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2"
+            >
+              <div>
+                <p className="text-sm font-medium">
+                  {p.full_name}
+                  {p.id === wardenId ? (
+                    <span className="ml-2 text-xs font-normal text-muted-foreground">
+                      (you)
+                    </span>
+                  ) : null}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {p.email} · {ROLE_LABELS[p.role] ?? p.role}
+                  {p.category ? ` · ${CATEGORY_LABELS[p.category] ?? p.category}` : ""}
+                  {p.hostel_block
+                    ? ` · Block ${p.hostel_block}${p.room_number ?? ""}`
+                    : ""}
+                  {p.approved === false ? " · pending" : ""}
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant="destructive"
+                disabled={pending || p.id === wardenId}
+                onClick={() => setRemoving(p)}
+              >
+                Remove
+              </Button>
             </div>
           ))}
         </CardContent>
@@ -219,6 +308,30 @@ export function AdminOps({
           </CardContent>
         </Card>
       </div>
+      <Dialog open={Boolean(removing)} onOpenChange={(o) => !o && setRemoving(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Remove this person?</DialogTitle>
+            <DialogDescription>
+              {removing
+                ? `${removing.full_name} (${removing.email}) will lose access immediately. Their student tickets are deleted; assigned jobs return to the queue.`
+                : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRemoving(null)}>
+              Keep account
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={pending || !removing}
+              onClick={() => removing && remove(removing)}
+            >
+              Remove
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

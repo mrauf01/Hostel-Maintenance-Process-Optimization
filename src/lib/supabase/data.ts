@@ -357,6 +357,31 @@ export async function sbUpdateVendor(input: {
   return { ok: true as const };
 }
 
+export async function sbRemoveRegisteredUser(id: string): Promise<{ error?: string }> {
+  const client = db();
+  const { data: owned } = await client
+    .from("complaints")
+    .select("id")
+    .eq("student_id", id);
+  const ownedIds = (owned ?? []).map((r) => (r as { id: string }).id);
+  await client.from("notifications").delete().eq("user_id", id);
+  if (ownedIds.length) {
+    await client.from("notifications").delete().in("complaint_id", ownedIds);
+    await client.from("complaint_events").delete().in("complaint_id", ownedIds);
+    await client.from("complaints").delete().in("id", ownedIds);
+  }
+  await client.from("complaint_events").update({ actor_id: null }).eq("actor_id", id);
+  await client.from("complaints").update({ assigned_staff_id: null }).eq("assigned_staff_id", id);
+  await client.from("complaints").update({ logged_by: null }).eq("logged_by", id);
+  const { error: profileError } = await client.from("profiles").delete().eq("id", id);
+  if (profileError) return { error: profileError.message };
+  const { error: authError } = await client.auth.admin.deleteUser(id);
+  if (authError && !/not found|user not found/i.test(authError.message)) {
+    return { error: authError.message };
+  }
+  return {};
+}
+
 export async function sbGetRawComplaint(id: string): Promise<Complaint | null> {
   const { data, error } = await db()
     .from("complaints")
