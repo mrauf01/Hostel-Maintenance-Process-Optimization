@@ -88,6 +88,64 @@ export const ROLE_LABELS: Record<string, string> = {
   admin: "Admin (Chief Warden)",
 };
 
+export const SIGNUP_ROLES: {
+  id: string;
+  label: string;
+  hint: string;
+  role: "student" | "staff" | "sc";
+  category: StaffCategory | null;
+}[] = [
+  {
+    id: "student",
+    label: "Student",
+    hint: "Log and track room / block complaints",
+    role: "student",
+    category: null,
+  },
+  {
+    id: "electrical",
+    label: "Electrical staff",
+    hint: "Power, sockets, fan, lights",
+    role: "staff",
+    category: "electrical",
+  },
+  {
+    id: "plumbing",
+    label: "Plumbing staff",
+    hint: "Water leak, bathroom, taps",
+    role: "staff",
+    category: "plumbing",
+  },
+  {
+    id: "furniture",
+    label: "Furniture / carpentry",
+    hint: "Beds, tables, wardrobes",
+    role: "staff",
+    category: "furniture",
+  },
+  {
+    id: "locks",
+    label: "Locks technician",
+    hint: "Door locks and latches",
+    role: "staff",
+    category: "locks",
+  },
+  {
+    id: "desk",
+    label: "Registration desk",
+    hint: "Log walk-in / call complaints",
+    role: "staff",
+    category: "other",
+  },
+  {
+    id: "sc",
+    label: "Student Coordinator",
+    hint: "Urgent / grievance queue",
+    role: "sc",
+    category: null,
+  },
+];
+
 export const LIFECYCLE_STEPS = [
   { key: "registered", label: "Registered" },
   { key: "assigned", label: "Assigned" },

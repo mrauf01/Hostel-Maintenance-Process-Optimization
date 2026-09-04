@@ -31,6 +31,7 @@ export type DemoStore = {
   notifications: AppNotification[];
   ticket_seq: number;
   year: number;
+  passwords: Record<string, string>;
 };
 
 const DEMO_PASSWORD = "demo123";
@@ -531,7 +532,7 @@ function makeSeed(): DemoStore {
   }
 
   return {
-    profiles,
+    profiles: profiles.map((p) => ({ ...p, approved: true })),
     sla_rules,
     vendors,
     complaints,
@@ -539,6 +540,7 @@ function makeSeed(): DemoStore {
     notifications,
     ticket_seq: seq - 1,
     year,
+    passwords: {},
   };
 }
 
@@ -549,6 +551,11 @@ function load(): DemoStore {
   try {
     if (existsSync(DATA_PATH)) {
       cache = JSON.parse(readFileSync(DATA_PATH, "utf8")) as DemoStore;
+      cache.passwords = cache.passwords ?? {};
+      cache.profiles = cache.profiles.map((p) => ({
+        ...p,
+        approved: p.approved !== false,
+      }));
       return cache;
     }
   } catch {
@@ -656,9 +663,22 @@ export function findUserByEmail(email: string): Profile | undefined {
   );
 }
 
-export function createStudent(input: {
+export function checkDemoPassword(email: string, password: string): boolean {
+  const s = load();
+  const stored = s.passwords[email.toLowerCase()];
+  if (stored) return stored === password;
+  if (findUserByEmail(email)) {
+    return password === DEMO_PASSWORD || password === "demo";
+  }
+  return false;
+}
+
+export function createAccount(input: {
   full_name: string;
   email: string;
+  password: string;
+  role: UserRole;
+  category: StaffCategory | null;
   hostel_block?: string;
   room_number?: string;
 }): Profile {
@@ -667,15 +687,37 @@ export function createStudent(input: {
     id: randomUUID(),
     full_name: input.full_name,
     email: input.email,
-    role: "student",
-    category: null,
+    role: input.role,
+    category: input.category,
     hostel_block: input.hostel_block ?? null,
     room_number: input.room_number ?? null,
     created_at: new Date().toISOString(),
+    approved: false,
   };
   s.profiles.push(p);
+  s.passwords[input.email.toLowerCase()] = input.password;
   persist();
   return p;
+}
+
+export function setApproved(id: string, approved: boolean) {
+  const p = load().profiles.find((x) => x.id === id);
+  if (p) p.approved = approved;
+  persist();
+}
+
+export function createStudent(input: {
+  full_name: string;
+  email: string;
+  hostel_block?: string;
+  room_number?: string;
+}): Profile {
+  return createAccount({
+    ...input,
+    password: DEMO_PASSWORD,
+    role: "student",
+    category: null,
+  });
 }
 
 export { ACKNOWLEDGE_TARGET_MINUTES, ISSUE_TYPES };

@@ -9,6 +9,7 @@ export default async function DashboardIndex() {
     redirect("/login?error=session");
   }
   if (!user) redirect("/login?error=profile");
+  if (user.approved === false) redirect("/pending");
   if (user.role === "student") redirect("/dashboard/student");
   if (user.role === "staff") redirect("/dashboard/staff");
   if (user.role === "sc") redirect("/dashboard/sc");

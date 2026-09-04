@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE } from "@/lib/session-cookie";
 import { updateSupabaseSession } from "@/lib/supabase/middleware";
 
-const PUBLIC = ["/login", "/signup"];
+const PUBLIC = ["/login", "/signup", "/pending"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

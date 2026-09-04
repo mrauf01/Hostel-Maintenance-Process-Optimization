@@ -1,4 +1,4 @@
-import { getCurrentProfile } from "@/actions/auth";
+import { getCurrentProfile, listPendingAccounts } from "@/actions/auth";
 import {
   listComplaintEvents,
   listComplaintsForUser,
@@ -23,6 +23,7 @@ export default async function AdminDashboard() {
   const rules = await listSlaRules();
   const staff = await listStaff();
   const vendors = await listVendors();
+  const pendingUsers = await listPendingAccounts();
   const breached = complaints.filter((c) => {
     if (c.status === "resolved") return false;
     return new Date(c.sla_deadline).getTime() < Date.now();
@@ -54,7 +55,12 @@ export default async function AdminDashboard() {
           />
         </TabsContent>
         <TabsContent value="ops" className="mt-4">
-          <AdminOps rules={rules} staff={staff} vendors={vendors} />
+          <AdminOps
+            rules={rules}
+            staff={staff}
+            vendors={vendors}
+            pendingUsers={pendingUsers}
+          />
         </TabsContent>
       </Tabs>
     </AppShell>

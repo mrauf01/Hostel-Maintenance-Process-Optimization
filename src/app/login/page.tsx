@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { signInDemo, signInSupabase } from "@/actions/auth";
+import { signIn } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,11 +50,15 @@ function LoginForm() {
         onSubmit={(e) => {
           e.preventDefault();
           start(async () => {
-            const res = demo
-              ? await signInDemo(email, password)
-              : await signInSupabase(email, password);
+            const res = await signIn(email, password);
             if ("error" in res && res.error) {
               toast.error(res.error);
+              return;
+            }
+            if (res.ok && res.approved === false) {
+              toast.message("Waiting for Admin approval");
+              router.push("/pending");
+              router.refresh();
               return;
             }
             toast.success("Signed in");
@@ -116,9 +120,9 @@ function LoginForm() {
         </div>
       )}
       <p className="mt-6 text-center text-sm">
-        New student?{" "}
+        New here?{" "}
         <Link href="/signup" className="font-medium text-primary underline">
-          Create an account
+          Register an account
         </Link>
       </p>
     </div>

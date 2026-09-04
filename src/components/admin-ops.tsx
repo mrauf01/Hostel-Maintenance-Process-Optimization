@@ -1,23 +1,28 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
+import { setAccountApproval } from "@/actions/auth";
 import { updateSlaRule, updateVendor } from "@/actions/complaints";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { CATEGORY_LABELS, PRIORITY_LABELS } from "@/lib/constants";
+import { CATEGORY_LABELS, PRIORITY_LABELS, ROLE_LABELS } from "@/lib/constants";
 import type { Profile, SlaRule, Vendor } from "@/lib/types";
 
 export function AdminOps({
   rules,
   staff,
   vendors,
+  pendingUsers,
 }: {
   rules: SlaRule[];
   staff: Profile[];
   vendors: Vendor[];
+  pendingUsers: Profile[];
 }) {
+  const router = useRouter();
   const [pending, start] = useTransition();
   const [draft, setDraft] = useState(
     Object.fromEntries(
@@ -30,6 +35,67 @@ export function AdminOps({
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
+      <Card className="lg:col-span-2">
+        <CardHeader>
+          <CardTitle className="text-base">
+            Pending registrations ({pendingUsers.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {pendingUsers.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              No accounts waiting. New signups appear here until you approve
+              them.
+            </p>
+          )}
+          {pendingUsers.map((u) => (
+            <div
+              key={u.id}
+              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2"
+            >
+              <div>
+                <p className="text-sm font-medium">{u.full_name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {u.email} · {ROLE_LABELS[u.role]}
+                  {u.category ? ` · ${CATEGORY_LABELS[u.category]}` : ""}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  disabled={pending}
+                  onClick={() =>
+                    start(async () => {
+                      const res = await setAccountApproval(u.id, true);
+                      if (res.error) toast.error(res.error);
+                      else {
+                        toast.success("Account activated");
+                        router.refresh();
+                      }
+                    })
+                  }
+                >
+                  Approve
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={pending}
+                  onClick={() =>
+                    start(async () => {
+                      const res = await setAccountApproval(u.id, false);
+                      if (res.error) toast.error(res.error);
+                      else toast.message("Left pending");
+                    })
+                  }
+                >
+                  Keep pending
+                </Button>
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
       <Card>
         <CardHeader>
           <CardTitle className="text-base">SLA matrix (editable)</CardTitle>

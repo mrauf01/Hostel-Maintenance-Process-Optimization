@@ -35,6 +35,8 @@ export type Profile = {
   hostel_block: string | null;
   room_number: string | null;
   created_at: string;
+  /** False until Chief Warden / Admin activates the account. */
+  approved?: boolean;
 };
 
 export type SlaRule = {
