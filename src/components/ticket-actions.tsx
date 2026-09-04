@@ -32,7 +32,9 @@ export function TicketActions({
   const [photo, setPhoto] = useState<string | null>(
     complaint.completion_photo_url
   );
-  const [assignee, setAssignee] = useState(complaint.assigned_staff_id ?? "");
+  const [assignee, setAssignee] = useState(
+    complaint.assigned_staff_id || undefined
+  );
 
   function run(
     input: Parameters<typeof updateComplaintStatus>[0],
@@ -242,7 +244,10 @@ export function TicketActions({
       {role === "admin" && complaint.status !== "resolved" && (
         <div className="space-y-2">
           <Label>Reassign staff</Label>
-          <Select value={assignee} onValueChange={setAssignee}>
+          <Select
+            value={assignee || undefined}
+            onValueChange={setAssignee}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Staff" />
             </SelectTrigger>

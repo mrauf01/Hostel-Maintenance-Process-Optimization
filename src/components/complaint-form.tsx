@@ -54,7 +54,7 @@ export function ComplaintForm({
     if (title.trim().length < 8) e.title = "At least 8 characters.";
     if (description.trim().length < 20) e.description = "At least 20 characters.";
     if (!issue) e.issue = "Pick an issue type so we can auto-triage.";
-    if (role === "staff" && !studentId) e.student = "Select the student.";
+    if ((role === "staff" || role === "admin") && !studentId) e.student = "Select the student.";
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -87,7 +87,7 @@ export function ComplaintForm({
             is_urgent: urgent,
             photo_url: photo,
             manual_priority: override === "auto" ? null : override,
-            student_id: role === "staff" ? studentId : null,
+            student_id: role === "staff" || role === "admin" ? studentId : null,
           });
           if (res.error) {
             toast.error(res.error);
@@ -98,10 +98,10 @@ export function ComplaintForm({
         });
       }}
     >
-      {role === "staff" && (
+      {(role === "staff" || role === "admin") && (
         <div className="space-y-1.5">
           <Label htmlFor="student">Student (walk-in / call)</Label>
-          <Select value={studentId} onValueChange={setStudentId}>
+          <Select value={studentId || undefined} onValueChange={setStudentId}>
             <SelectTrigger id="student" aria-invalid={!!errors.student}>
               <SelectValue placeholder="Who is this for?" />
             </SelectTrigger>

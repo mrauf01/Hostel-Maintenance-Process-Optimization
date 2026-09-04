@@ -5,10 +5,21 @@ import { isDemoMode } from "@/lib/mode";
 import { redirect } from "next/navigation";
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
-  const user = await getCurrentProfile();
+  let user = null;
+  try {
+    user = await getCurrentProfile();
+  } catch (e) {
+    console.error(e);
+    redirect("/login?error=session");
+  }
   if (!user) redirect("/login");
   const demo = isDemoMode();
-  const demoUsers = demo ? await listProfiles() : [];
+  let demoUsers: Awaited<ReturnType<typeof listProfiles>> = [];
+  try {
+    demoUsers = demo ? await listProfiles() : [];
+  } catch {
+    demoUsers = [];
+  }
   return (
     <div className="min-h-screen">
       <AppHeader user={user} demoUsers={demoUsers} demoMode={demo} />

@@ -5,13 +5,25 @@ import { ComplaintForm } from "@/components/complaint-form";
 import { redirect } from "next/navigation";
 
 export default async function NewComplaintPage() {
-  const user = await getCurrentProfile();
+  let user = null;
+  try {
+    user = await getCurrentProfile();
+  } catch (e) {
+    console.error(e);
+    redirect("/login?error=session");
+  }
   if (!user) redirect("/login");
   if (user.role !== "student" && user.role !== "staff" && user.role !== "admin") {
     redirect("/dashboard");
   }
-  const students =
-    user.role === "staff" || user.role === "admin" ? await listProfiles() : [];
+  let students: Awaited<ReturnType<typeof listProfiles>> = [];
+  try {
+    if (user.role === "staff" || user.role === "admin") {
+      students = await listProfiles();
+    }
+  } catch (e) {
+    console.error(e);
+  }
 
   return (
     <AppShell>

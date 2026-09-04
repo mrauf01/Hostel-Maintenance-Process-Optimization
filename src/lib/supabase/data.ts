@@ -192,9 +192,10 @@ export async function sbCreateComplaint(input: {
 }): Promise<{ error?: string; ticket_id?: string }> {
   const studentId =
     input.me.role === "student" ? input.me.id : input.student_id || input.me.id;
-  if (input.me.role === "staff" && !input.student_id) {
+  if ((input.me.role === "staff" || input.me.role === "admin") && !input.student_id) {
     return { error: "Select the student you are logging this for." };
   }
+  try {
   const rules = await sbListSlaRules();
   const tri = triageIssue(
     input.issue_type,
@@ -205,7 +206,7 @@ export async function sbCreateComplaint(input: {
   const rule = matchSlaRule(rules, tri.category, tri.priority);
   const now = new Date();
   const staff = await leastBusy(tri.category);
-  const insert = {
+  const insert: Record<string, unknown> = {
     student_id: studentId,
     title: input.title.trim(),
     description: input.description.trim(),
@@ -220,11 +221,18 @@ export async function sbCreateComplaint(input: {
     assigned_at: staff ? now.toISOString() : null,
     logged_by: input.me.id,
   };
-  const { data, error } = await db()
+  let { data, error } = await db()
     .from("complaints")
     .insert(insert)
     .select("*")
     .single();
+  if (error) {
+    const y = new Date().getFullYear();
+    insert.ticket_id = `HZL-${y}-${String(Date.now()).slice(-5)}`;
+    const retry = await db().from("complaints").insert(insert).select("*").single();
+    data = retry.data;
+    error = retry.error;
+  }
   if (error) return { error: error.message };
   const c = data as Complaint;
   await sbEvent(
@@ -268,6 +276,12 @@ export async function sbCreateComplaint(input: {
   }
   await sbNotify(studentId, "Complaint registered", `${c.ticket_id} created`, c.id);
   return { ticket_id: c.ticket_id };
+  } catch (e) {
+    const message =
+      e instanceof Error ? e.message : "Could not save the ticket to the database.";
+    console.error("[create complaint]", e);
+    return { error: message };
+  }
 }
 
 export async function sbPatchComplaint(

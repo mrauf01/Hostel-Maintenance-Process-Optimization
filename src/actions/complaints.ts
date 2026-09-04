@@ -238,15 +238,21 @@ export async function createComplaint(input: {
 
   const studentId =
     me.role === "student" ? me.id : input.student_id || me.id;
-  if (me.role === "staff" && !input.student_id) {
+  if ((me.role === "staff" || me.role === "admin") && !input.student_id) {
     return { error: "Select the student you are logging this for." };
   }
 
   if (liveDb()) {
-    const { sbCreateComplaint } = await import("@/lib/supabase/data");
-    const res = await sbCreateComplaint({ me, ...input });
-    if (res.ticket_id) touchPaths(res.ticket_id);
-    return res;
+    try {
+      const { sbCreateComplaint } = await import("@/lib/supabase/data");
+      const res = await sbCreateComplaint({ me, ...input });
+      if (res.ticket_id) touchPaths(res.ticket_id);
+      return res;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Could not save the ticket.";
+      console.error(e);
+      return { error: message };
+    }
   }
 
   const s = getStore();
@@ -521,7 +527,14 @@ export async function updateComplaintStatus(input: {
   const me = await getCurrentProfile();
   if (!me) return { error: "Sign in required." };
   if (liveDb()) {
-    return updateComplaintStatusLive(me, input);
+    try {
+      return await updateComplaintStatusLive(me, input);
+    } catch (e) {
+      console.error(e);
+      return {
+        error: e instanceof Error ? e.message : "Could not update the ticket.",
+      };
+    }
   }
   const s = getStore();
   const c = s.complaints.find((x) => x.id === input.id);
@@ -735,10 +748,14 @@ export async function updateSlaRule(input: {
   const me = await getCurrentProfile();
   if (me?.role !== "admin") return { error: "Admin only." };
   if (liveDb()) {
-    const { sbUpdateSlaRule } = await import("@/lib/supabase/data");
-    const res = await sbUpdateSlaRule(input);
-    touchPaths();
-    return res;
+    try {
+      const { sbUpdateSlaRule } = await import("@/lib/supabase/data");
+      const res = await sbUpdateSlaRule(input);
+      touchPaths();
+      return res;
+    } catch (e) {
+      return { error: e instanceof Error ? e.message : "Could not save SLA." };
+    }
   }
   const rule = getStore().sla_rules.find((r) => r.id === input.id);
   if (!rule) return { error: "Rule not found." };
@@ -757,10 +774,14 @@ export async function updateVendor(input: {
   const me = await getCurrentProfile();
   if (me?.role !== "admin") return { error: "Admin only." };
   if (liveDb()) {
-    const { sbUpdateVendor } = await import("@/lib/supabase/data");
-    const res = await sbUpdateVendor(input);
-    touchPaths();
-    return res;
+    try {
+      const { sbUpdateVendor } = await import("@/lib/supabase/data");
+      const res = await sbUpdateVendor(input);
+      touchPaths();
+      return res;
+    } catch (e) {
+      return { error: e instanceof Error ? e.message : "Could not update vendor." };
+    }
   }
   const v = getStore().vendors.find((x) => x.id === input.id);
   if (!v) return { error: "Vendor not found." };
