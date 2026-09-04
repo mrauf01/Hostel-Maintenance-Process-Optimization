@@ -1,0 +1,18 @@
+import { AppHeader } from "@/components/app-header";
+import { getCurrentProfile } from "@/actions/auth";
+import { listProfiles } from "@/actions/complaints";
+import { isDemoMode } from "@/lib/mode";
+import { redirect } from "next/navigation";
+
+export async function AppShell({ children }: { children: React.ReactNode }) {
+  const user = await getCurrentProfile();
+  if (!user) redirect("/login");
+  const demo = isDemoMode();
+  const demoUsers = demo ? await listProfiles() : [];
+  return (
+    <div className="min-h-screen">
+      <AppHeader user={user} demoUsers={demoUsers} demoMode={demo} />
+      <main className="mx-auto max-w-6xl px-4 py-6 pb-24">{children}</main>
+    </div>
+  );
+}

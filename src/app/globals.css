@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 42 33% 97%;
+    --foreground: 198 44% 12%;
+    --card: 40 40% 99%;
+    --card-foreground: 198 44% 12%;
+    --popover: 40 40% 99%;
+    --popover-foreground: 198 44% 12%;
+    --primary: 174 62% 24%;
+    --primary-foreground: 40 40% 98%;
+    --secondary: 198 28% 92%;
+    --secondary-foreground: 198 44% 16%;
+    --muted: 40 18% 93%;
+    --muted-foreground: 198 12% 38%;
+    --accent: 32 92% 92%;
+    --accent-foreground: 24 70% 28%;
+    --destructive: 0 72% 46%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 40 18% 86%;
+    --input: 40 18% 86%;
+    --ring: 174 62% 24%;
+    --chart-1: 174 62% 32%;
+    --chart-2: 32 90% 52%;
+    --chart-3: 198 55% 36%;
+    --chart-4: 152 45% 36%;
+    --chart-5: 0 72% 52%;
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    background-image:
+      radial-gradient(1200px 500px at 10% -10%, hsl(174 50% 90% / 0.7), transparent 50%),
+      radial-gradient(900px 400px at 100% 0%, hsl(32 80% 90% / 0.45), transparent 45%);
+  }
+}
+
+@keyframes pulse-step {
+  0%, 100% { box-shadow: 0 0 0 0 hsl(174 62% 24% / 0.35); }
+  50% { box-shadow: 0 0 0 8px hsl(174 62% 24% / 0); }
+}
+
+.step-current {
+  animation: pulse-step 1.6s ease-in-out infinite;
+}
