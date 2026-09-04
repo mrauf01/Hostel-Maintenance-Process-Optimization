@@ -82,7 +82,7 @@ SLA status **On Track / At Risk / Breached** is computed from `created_at` + the
 - `/dashboard` — role redirect
 - `/dashboard/student` — cards, FAB on mobile
 - `/dashboard/staff` — category queue, walk-in logging
-- `/dashboard/sc` — grievance queue
+- `/dashboard/sc` — Student council member grievance queue
 - `/dashboard/admin` — KPIs, all tickets, SLA/staff/vendors
 - `/complaints/new`
 - `/complaints/[ticket_id]`
