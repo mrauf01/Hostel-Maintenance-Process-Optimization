@@ -1,11 +1,12 @@
 "use client";
 
-import { Bell, LogOut, Plus } from "lucide-react";
+import { Bell, Plus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
-import { signOut, switchDemoUser } from "@/actions/auth";
+import { switchDemoUser } from "@/actions/auth";
 import { listNotifications, markNotificationsRead } from "@/actions/complaints";
+import { AccountMenu } from "@/components/account-menu";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -179,11 +180,7 @@ export function AppHeader({
             </DropdownMenu>
           )}
 
-          <form action={signOut}>
-            <Button variant="ghost" size="icon" type="submit" aria-label="Sign out">
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </form>
+          <AccountMenu user={user} />
         </div>
       </div>
     </header>
