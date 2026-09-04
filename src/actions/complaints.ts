@@ -14,7 +14,6 @@ import {
 } from "@/lib/demo/store";
 import { computeDeadline, matchSlaRule, triageIssue } from "@/lib/sla";
 import { isDemoMode, isSupabaseConfigured } from "@/lib/mode";
-import { createAdminClient } from "@/lib/supabase/admin";
 import type {
   Complaint,
   ComplaintEvent,
@@ -38,11 +37,27 @@ function touchPaths(ticketId?: string) {
   if (ticketId) revalidatePath(`/complaints/${ticketId}`);
 }
 
+function liveDb() {
+  return !isDemoMode() && isSupabaseConfigured();
+}
+
 export async function listComplaintsForUser(): Promise<Complaint[]> {
   const me = await getCurrentProfile();
   if (!me) return [];
+  if (liveDb()) {
+    const { sbListComplaints } = await import("@/lib/supabase/data");
+    return filterByRole(await sbListComplaints(), me);
+  }
   const all = getStore().complaints.map(hydrateComplaint);
   return filterByRole(all, me);
+}
+
+export async function listComplaintEvents(): Promise<ComplaintEvent[]> {
+  if (liveDb()) {
+    const { sbListEvents } = await import("@/lib/supabase/data");
+    return sbListEvents();
+  }
+  return getStore().events;
 }
 
 function filterByRole(all: Complaint[], me: Profile): Complaint[] {
@@ -65,6 +80,13 @@ export async function getComplaintByTicket(
 ): Promise<{ complaint: Complaint; events: ComplaintEvent[] } | null> {
   const me = await getCurrentProfile();
   if (!me) return null;
+  if (liveDb()) {
+    const { sbGetComplaint } = await import("@/lib/supabase/data");
+    const found = await sbGetComplaint(ticketId);
+    if (!found) return null;
+    if (!filterByRole([found.complaint], me).length) return null;
+    return found;
+  }
   const s = getStore();
   const raw = s.complaints.find(
     (c) => c.ticket_id === ticketId || c.id === ticketId
@@ -87,20 +109,38 @@ export async function getComplaintByTicket(
 }
 
 export async function listSlaRules(): Promise<SlaRule[]> {
+  if (liveDb()) {
+    const { sbListSlaRules } = await import("@/lib/supabase/data");
+    return sbListSlaRules();
+  }
   return getStore().sla_rules;
 }
 
 export async function listStaff(): Promise<Profile[]> {
+  if (liveDb()) {
+    const { sbListStaff } = await import("@/lib/supabase/data");
+    return sbListStaff();
+  }
   return getStore().profiles.filter((p) => p.role === "staff");
 }
 
 export async function listVendors(): Promise<Vendor[]> {
+  if (liveDb()) {
+    const { sbListVendors } = await import("@/lib/supabase/data");
+    return sbListVendors();
+  }
   return getStore().vendors;
 }
 
 export async function listProfiles(): Promise<Profile[]> {
   const me = await getCurrentProfile();
   if (!me) return [];
+  if (liveDb()) {
+    const { sbListProfiles } = await import("@/lib/supabase/data");
+    const all = await sbListProfiles();
+    if (me.role === "admin" || me.role === "staff" || me.role === "sc") return all;
+    return [me];
+  }
   if (me.role === "admin" || me.role === "staff" || me.role === "sc") {
     return getStore().profiles;
   }
@@ -110,6 +150,10 @@ export async function listProfiles(): Promise<Profile[]> {
 export async function listNotifications(): Promise<AppNotification[]> {
   const me = await getCurrentProfile();
   if (!me) return [];
+  if (liveDb()) {
+    const { sbListNotifications } = await import("@/lib/supabase/data");
+    return sbListNotifications(me.id);
+  }
   return getStore()
     .notifications.filter((n) => n.user_id === me.id)
     .sort(
@@ -121,6 +165,12 @@ export async function listNotifications(): Promise<AppNotification[]> {
 export async function markNotificationsRead() {
   const me = await getCurrentProfile();
   if (!me) return;
+  if (liveDb()) {
+    const { sbMarkNotificationsRead } = await import("@/lib/supabase/data");
+    await sbMarkNotificationsRead(me.id);
+    touchPaths();
+    return;
+  }
   getStore().notifications.forEach((n) => {
     if (n.user_id === me.id) n.read = true;
   });
@@ -150,6 +200,13 @@ export async function createComplaint(input: {
     me.role === "student" ? me.id : input.student_id || me.id;
   if (me.role === "staff" && !input.student_id) {
     return { error: "Select the student you are logging this for." };
+  }
+
+  if (liveDb()) {
+    const { sbCreateComplaint } = await import("@/lib/supabase/data");
+    const res = await sbCreateComplaint({ me, ...input });
+    if (res.ticket_id) touchPaths(res.ticket_id);
+    return res;
   }
 
   const s = getStore();
@@ -227,8 +284,186 @@ export async function createComplaint(input: {
   );
   saveStore();
   touchPaths(ticket_id);
-  void syncSupabaseCreate(complaint);
   return { ticket_id };
+}
+
+async function updateComplaintStatusLive(
+  me: Profile,
+  input: {
+    id: string;
+    status?: ComplaintStatus;
+    note?: string;
+    completion_photo_url?: string | null;
+    vendor_unavailable?: boolean;
+    assigned_staff_id?: string | null;
+    is_urgent?: boolean;
+    escalate_to_admin?: boolean;
+    further_escalation?: boolean;
+    confirm?: "resolved" | "not_resolved";
+  }
+): Promise<{ error?: string; ticket_id?: string }> {
+  const {
+    sbGetRawComplaint,
+    sbPatchComplaint,
+    sbAddEvent,
+    sbNotifyUsers,
+    sbListProfiles,
+  } = await import("@/lib/supabase/data");
+  const c = await sbGetRawComplaint(input.id);
+  if (!c) return { error: "Ticket not found." };
+  const now = new Date().toISOString();
+  const admins = (await sbListProfiles())
+    .filter((p) => p.role === "admin")
+    .map((p) => p.id);
+  const scs = (await sbListProfiles())
+    .filter((p) => p.role === "sc")
+    .map((p) => p.id);
+
+  async function done() {
+    touchPaths(c!.ticket_id);
+    return { ticket_id: c!.ticket_id };
+  }
+
+  if (input.confirm === "resolved") {
+    if (me.role !== "student" || me.id !== c.student_id) {
+      return { error: "Only the student can confirm closure." };
+    }
+    await sbPatchComplaint(c.id, { status: "resolved", resolved_at: now });
+    await sbAddEvent(c.id, me.id, "resolved", "Student confirmed resolved");
+    if (c.assigned_staff_id)
+      await sbNotifyUsers([c.assigned_staff_id], "Ticket closed", c.ticket_id, c.id);
+    await sbNotifyUsers(admins, "Closure confirmed", c.ticket_id, c.id);
+    return done();
+  }
+  if (input.confirm === "not_resolved") {
+    if (me.role !== "student" || me.id !== c.student_id) {
+      return { error: "Only the student can reopen." };
+    }
+    await sbPatchComplaint(c.id, { status: "reopened", resolved_at: null });
+    await sbAddEvent(c.id, me.id, "reopened", "Student marked not resolved — reopened");
+    if (c.assigned_staff_id)
+      await sbNotifyUsers(
+        [c.assigned_staff_id],
+        "Ticket reopened",
+        `${c.ticket_id} was not resolved`,
+        c.id
+      );
+    await sbNotifyUsers(admins, "Reopened ticket", c.ticket_id, c.id);
+    return done();
+  }
+  if (input.is_urgent && me.role === "student") {
+    await sbPatchComplaint(c.id, { is_urgent: true });
+    await sbAddEvent(c.id, me.id, "flagged_urgent", "Student flagged as urgent");
+    await sbNotifyUsers(
+      scs,
+      "Urgent flag",
+      `${c.ticket_id} added to grievance queue`,
+      c.id
+    );
+    return done();
+  }
+  if (input.escalate_to_admin && me.role === "sc") {
+    await sbPatchComplaint(c.id, { status: "escalated" });
+    await sbAddEvent(
+      c.id,
+      me.id,
+      "escalated",
+      input.note || "SC escalated to Admin (Chief Warden / Chief Engineer)"
+    );
+    await sbNotifyUsers(admins, "Escalated to Admin", c.ticket_id, c.id);
+    if (c.assigned_staff_id)
+      await sbNotifyUsers([c.assigned_staff_id], "Ticket escalated", c.ticket_id, c.id);
+    await sbNotifyUsers([c.student_id], "Your ticket was escalated", c.ticket_id, c.id);
+    return done();
+  }
+  if (input.further_escalation && me.role === "admin") {
+    await sbPatchComplaint(c.id, {
+      further_escalation: true,
+      status: "escalated",
+    });
+    await sbAddEvent(
+      c.id,
+      me.id,
+      "further_escalation",
+      input.note ||
+        "Admin resolution did not close the ticket — flagged Further Escalation"
+    );
+    await sbNotifyUsers([c.student_id], "Further escalation", c.ticket_id, c.id);
+    return done();
+  }
+  if (input.assigned_staff_id && (me.role === "admin" || me.role === "staff")) {
+    const staff = (await sbListProfiles()).find(
+      (p) => p.id === input.assigned_staff_id
+    );
+    await sbPatchComplaint(c.id, {
+      assigned_staff_id: input.assigned_staff_id,
+      assigned_at: now,
+      acknowledged_at: null,
+      status: "assigned",
+    });
+    await sbAddEvent(
+      c.id,
+      me.id,
+      "assigned",
+      `Reassigned to ${staff?.full_name ?? "staff"}`
+    );
+    await sbNotifyUsers(
+      [input.assigned_staff_id],
+      "Ticket assigned",
+      `${c.ticket_id} · acknowledge within 15 minutes`,
+      c.id
+    );
+    return done();
+  }
+  if (me.role !== "staff" && me.role !== "admin") {
+    return { error: "You cannot update this ticket." };
+  }
+  if (input.status === "assigned" && !c.acknowledged_at) {
+    await sbPatchComplaint(c.id, { acknowledged_at: now });
+    await sbAddEvent(c.id, me.id, "acknowledged", "Staff acknowledged the job");
+    await sbNotifyUsers(
+      [c.student_id],
+      "Staff acknowledged your ticket",
+      c.ticket_id,
+      c.id
+    );
+    return done();
+  }
+  if (input.status) {
+    const patch: Record<string, unknown> = { status: input.status };
+    if (input.status === "in_progress" && !c.acknowledged_at)
+      patch.acknowledged_at = now;
+    if (input.vendor_unavailable) patch.vendor_unavailable = true;
+    if (input.completion_photo_url)
+      patch.completion_photo_url = input.completion_photo_url;
+    await sbPatchComplaint(c.id, patch);
+    await sbAddEvent(
+      c.id,
+      me.id,
+      input.vendor_unavailable ? "vendor_unavailable" : input.status,
+      input.note || input.status
+    );
+    await sbNotifyUsers(
+      [c.student_id],
+      `Status: ${input.status.replaceAll("_", " ")}`,
+      c.ticket_id,
+      c.id
+    );
+    if (input.status === "material_requested" || input.vendor_unavailable) {
+      await sbNotifyUsers(
+        admins,
+        input.vendor_unavailable ? "Vendor unavailable" : "Material requested",
+        c.ticket_id,
+        c.id
+      );
+    }
+    return done();
+  }
+  if (input.note) {
+    await sbAddEvent(c.id, me.id, "note", input.note);
+    return done();
+  }
+  return { error: "Nothing to update." };
 }
 
 export async function updateComplaintStatus(input: {
@@ -245,6 +480,9 @@ export async function updateComplaintStatus(input: {
 }): Promise<{ error?: string; ticket_id?: string }> {
   const me = await getCurrentProfile();
   if (!me) return { error: "Sign in required." };
+  if (liveDb()) {
+    return updateComplaintStatusLive(me, input);
+  }
   const s = getStore();
   const c = s.complaints.find((x) => x.id === input.id);
   if (!c) return { error: "Ticket not found." };
@@ -456,6 +694,12 @@ export async function updateSlaRule(input: {
 }) {
   const me = await getCurrentProfile();
   if (me?.role !== "admin") return { error: "Admin only." };
+  if (liveDb()) {
+    const { sbUpdateSlaRule } = await import("@/lib/supabase/data");
+    const res = await sbUpdateSlaRule(input);
+    touchPaths();
+    return res;
+  }
   const rule = getStore().sla_rules.find((r) => r.id === input.id);
   if (!rule) return { error: "Rule not found." };
   rule.response_minutes = input.response_minutes;
@@ -472,6 +716,12 @@ export async function updateVendor(input: {
 }) {
   const me = await getCurrentProfile();
   if (me?.role !== "admin") return { error: "Admin only." };
+  if (liveDb()) {
+    const { sbUpdateVendor } = await import("@/lib/supabase/data");
+    const res = await sbUpdateVendor(input);
+    touchPaths();
+    return res;
+  }
   const v = getStore().vendors.find((x) => x.id === input.id);
   if (!v) return { error: "Vendor not found." };
   v.available = input.available;
@@ -502,11 +752,4 @@ export async function resetDemoData() {
   resetStore();
   touchPaths();
   return { ok: true as const };
-}
-
-async function syncSupabaseCreate(complaint: Complaint) {
-  if (isDemoMode() || !isSupabaseConfigured()) return;
-  const admin = createAdminClient();
-  if (!admin) return;
-  await admin.from("complaints").insert(complaint);
 }

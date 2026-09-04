@@ -1,11 +1,11 @@
 import { getCurrentProfile } from "@/actions/auth";
 import {
+  listComplaintEvents,
   listComplaintsForUser,
   listSlaRules,
   listStaff,
   listVendors,
 } from "@/actions/complaints";
-import { getStore } from "@/lib/demo/store";
 import { AdminOps } from "@/components/admin-ops";
 import { AppShell } from "@/components/app-shell";
 import { KpiDashboard } from "@/components/kpi-dashboard";
@@ -19,7 +19,7 @@ export default async function AdminDashboard() {
   if (!user) redirect("/login");
   if (user.role !== "admin") redirect("/dashboard");
   const complaints = await listComplaintsForUser();
-  const events = getStore().events;
+  const events = await listComplaintEvents();
   const rules = await listSlaRules();
   const staff = await listStaff();
   const vendors = await listVendors();
