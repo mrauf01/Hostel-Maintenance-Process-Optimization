@@ -11,7 +11,7 @@ const sans = Source_Sans_3({
 export const metadata: Metadata = {
   title: "HZL Desk — Hostel Maintenance",
   description:
-    "Complaint lifecycle for hostel maintenance: intake, auto-triage, dispatch, SLA, confirmation.",
+    "One desk for hostel complaints: log, triage, dispatch, SLA, and student confirmation.",
 };
 
 export default function RootLayout({
