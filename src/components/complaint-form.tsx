@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ISSUE_TYPES, PRIORITY_LABELS } from "@/lib/constants";
 import { triageIssue } from "@/lib/sla";
 import type { IssueType, Priority, Profile, UserRole } from "@/lib/types";
+import { compressImage } from "@/lib/compress-image";
 import { cn } from "@/lib/utils";
 
 export function ComplaintForm({
@@ -59,15 +60,17 @@ export function ComplaintForm({
     return Object.keys(e).length === 0;
   }
 
-  function onFile(file?: File) {
+  async function onFile(file?: File) {
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       toast.error("Please upload an image.");
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => setPhoto(String(reader.result));
-    reader.readAsDataURL(file);
+    try {
+      setPhoto(await compressImage(file));
+    } catch {
+      toast.error("Could not read that image.");
+    }
   }
 
   return (

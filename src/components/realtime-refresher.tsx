@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { listComplaintsForUser } from "@/actions/complaints";
 import type { Complaint } from "@/lib/types";
@@ -17,21 +17,22 @@ export function RealtimeRefresher({
   const snap = useRef(
     new Map(initial.map((c) => [c.id, c.status] as const))
   );
-  const [ready, setReady] = useState(false);
 
   const poll = useCallback(async () => {
+    if (typeof document !== "undefined" && document.hidden) return;
     const next = await listComplaintsForUser().catch(() => []);
+    let changed = false;
     for (const c of next) {
       const prev = snap.current.get(c.id);
       if (prev && prev !== c.status) {
         toast.message(`${c.ticket_id} updated`, {
           description: `Now ${String(c.status ?? "").replaceAll("_", " ")}`,
         });
-        router.refresh();
+        changed = true;
       }
       snap.current.set(c.id, c.status);
     }
-    setReady(true);
+    if (changed) router.refresh();
   }, [router]);
 
   useEffect(() => {
@@ -39,9 +40,16 @@ export function RealtimeRefresher({
   }, [initial, userId]);
 
   useEffect(() => {
-    const t = setInterval(poll, 3000);
-    return () => clearInterval(t);
+    const t = setInterval(poll, 20000);
+    const onVis = () => {
+      if (!document.hidden) void poll();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener("visibilitychange", onVis);
+    };
   }, [poll]);
 
-  return ready ? null : null;
+  return null;
 }

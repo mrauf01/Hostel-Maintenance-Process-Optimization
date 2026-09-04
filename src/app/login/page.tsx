@@ -60,12 +60,10 @@ function LoginForm() {
             if (res.ok && res.approved === false) {
               toast.message("Waiting for Admin approval");
               router.push("/pending");
-              router.refresh();
               return;
             }
             toast.success("Signed in");
             router.push(next);
-            router.refresh();
           });
         }}
       >

@@ -242,46 +242,52 @@ export async function sbCreateComplaint(input: {
   }
   if (error) return { error: error.message };
   const c = data as Complaint;
-  await sbEvent(
-    c.id,
-    input.me.id,
-    "registered",
-    input.me.role === "student"
-      ? "Logged via student portal"
-      : `Walk-in / call logged by ${input.me.full_name}`
-  );
-  if (input.is_urgent) {
-    await sbEvent(
+  const followUp: Promise<unknown>[] = [
+    sbEvent(
       c.id,
       input.me.id,
-      "flagged_urgent",
-      "Flagged urgent — visible in SC grievance queue"
+      "registered",
+      input.me.role === "student"
+        ? "Logged via student portal"
+        : `Walk-in / call logged by ${input.me.full_name}`
+    ),
+    sbNotify(studentId, "Complaint registered", `${c.ticket_id} created`, c.id),
+  ];
+  if (input.is_urgent) {
+    followUp.push(
+      sbEvent(
+        c.id,
+        input.me.id,
+        "flagged_urgent",
+        "Flagged urgent — visible in SC grievance queue"
+      )
     );
-    const sc = (await sbListProfiles()).filter((p) => p.role === "sc");
-    for (const p of sc) {
-      await sbNotify(
-        p.id,
-        "Urgent complaint",
-        `${c.ticket_id}: ${c.title}`,
-        c.id
-      );
-    }
   }
   if (staff) {
-    await sbEvent(
-      c.id,
-      input.me.id,
-      "assigned",
-      `Auto-assigned to ${staff.full_name} (${tri.category}, least busy)`
-    );
-    await sbNotify(
-      staff.id,
-      "New job assigned",
-      `${c.ticket_id} · acknowledge within 15 minutes`,
-      c.id
+    followUp.push(
+      sbEvent(
+        c.id,
+        input.me.id,
+        "assigned",
+        `Auto-assigned to ${staff.full_name} (${tri.category}, least busy)`
+      ),
+      sbNotify(
+        staff.id,
+        "New job assigned",
+        `${c.ticket_id} · acknowledge within 15 minutes`,
+        c.id
+      )
     );
   }
-  await sbNotify(studentId, "Complaint registered", `${c.ticket_id} created`, c.id);
+  await Promise.all(followUp);
+  if (input.is_urgent) {
+    const sc = (await sbListProfiles()).filter((p) => p.role === "sc");
+    await Promise.all(
+      sc.map((p) =>
+        sbNotify(p.id, "Urgent complaint", `${c.ticket_id}: ${c.title}`, c.id)
+      )
+    );
+  }
   return { ticket_id: c.ticket_id };
   } catch (e) {
     const message =

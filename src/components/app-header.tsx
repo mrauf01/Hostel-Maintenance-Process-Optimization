@@ -34,7 +34,8 @@ export function AppHeader({
 
   useEffect(() => {
     let live = true;
-    const load = () =>
+    const load = () => {
+      if (typeof document !== "undefined" && document.hidden) return;
       listNotifications()
         .then((n) => {
           if (live) setNotes(Array.isArray(n) ? n : []);
@@ -42,8 +43,9 @@ export function AppHeader({
         .catch(() => {
           if (live) setNotes([]);
         });
+    };
     load();
-    const t = setInterval(load, 4000);
+    const t = setInterval(load, 20000);
     return () => {
       live = false;
       clearInterval(t);

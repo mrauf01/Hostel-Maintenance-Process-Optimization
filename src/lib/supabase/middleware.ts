@@ -8,6 +8,12 @@ export async function updateSupabaseSession(request: NextRequest) {
   if (!url || !key) {
     return { userId: null as string | null, response };
   }
+  const hasAuthCookie = request.cookies
+    .getAll()
+    .some((c) => c.name.startsWith("sb-"));
+  if (!hasAuthCookie) {
+    return { userId: null as string | null, response };
+  }
 
   try {
     let next = response;

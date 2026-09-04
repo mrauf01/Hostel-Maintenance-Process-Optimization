@@ -19,12 +19,15 @@ export default async function AdminDashboard() {
   const user = await getCurrentProfile();
   if (!user) redirect("/login");
   if (user.role !== "admin") redirect("/dashboard");
-  const complaints = await listComplaintsForUser();
-  const events = await listComplaintEvents();
-  const rules = await listSlaRules();
-  const staff = await listStaff();
-  const vendors = await listVendors();
-  const pendingUsers = await listPendingAccounts();
+  const [complaints, events, rules, staff, vendors, pendingUsers] =
+    await Promise.all([
+      listComplaintsForUser(),
+      listComplaintEvents(),
+      listSlaRules(),
+      listStaff(),
+      listVendors(),
+      listPendingAccounts(),
+    ]);
   const breached = complaints.filter((c) => {
     if (c.status === "resolved") return false;
     return new Date(c.sla_deadline).getTime() < Date.now();

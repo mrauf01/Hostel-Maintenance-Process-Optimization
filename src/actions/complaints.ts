@@ -2,7 +2,7 @@
 
 import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
-import { getCurrentProfile } from "@/actions/auth";
+import { getCurrentProfile } from "@/lib/current-profile";
 import {
   addEvent,
   getStore,
@@ -28,12 +28,7 @@ import type {
 } from "@/lib/types";
 
 function touchPaths(ticketId?: string) {
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/student");
-  revalidatePath("/dashboard/staff");
-  revalidatePath("/dashboard/sc");
-  revalidatePath("/dashboard/admin");
-  revalidatePath("/complaints/new");
+  revalidatePath("/dashboard", "layout");
   if (ticketId) revalidatePath(`/complaints/${ticketId}`);
 }
 
@@ -355,12 +350,9 @@ async function updateComplaintStatusLive(
   const c = await sbGetRawComplaint(input.id);
   if (!c) return { error: "Ticket not found." };
   const now = new Date().toISOString();
-  const admins = (await sbListProfiles())
-    .filter((p) => p.role === "admin")
-    .map((p) => p.id);
-  const scs = (await sbListProfiles())
-    .filter((p) => p.role === "sc")
-    .map((p) => p.id);
+  const people = await sbListProfiles();
+  const admins = people.filter((p) => p.role === "admin").map((p) => p.id);
+  const scs = people.filter((p) => p.role === "sc").map((p) => p.id);
 
   async function done() {
     touchPaths(c!.ticket_id);

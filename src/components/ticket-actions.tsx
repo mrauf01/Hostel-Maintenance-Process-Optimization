@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { compressImage } from "@/lib/compress-image";
 import type { Complaint, Profile, UserRole } from "@/lib/types";
 
 export function TicketActions({
@@ -52,9 +53,9 @@ export function TicketActions({
 
   function onFile(file?: File) {
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => setPhoto(String(reader.result));
-    reader.readAsDataURL(file);
+    void compressImage(file)
+      .then(setPhoto)
+      .catch(() => toast.error("Could not read that image."));
   }
 
   return (
