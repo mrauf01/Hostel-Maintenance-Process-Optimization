@@ -259,7 +259,7 @@ export async function sbCreateComplaint(input: {
         c.id,
         input.me.id,
         "flagged_urgent",
-        "Flagged urgent — visible in SC grievance queue"
+        "Flagged urgent — visible in the Student council member grievance queue"
       )
     );
   }

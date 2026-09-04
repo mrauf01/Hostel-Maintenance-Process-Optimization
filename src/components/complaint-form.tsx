@@ -224,7 +224,7 @@ export function ComplaintForm({
           Auto-triage:{" "}
           <strong className="capitalize">{preview.category}</strong> ·{" "}
           <strong>{PRIORITY_LABELS[preview.priority]}</strong>
-          {urgent ? " · will appear in SC grievance queue" : ""}
+          {urgent ? " · will appear in the Student council member queue" : ""}
         </div>
       )}
 
@@ -235,7 +235,7 @@ export function ComplaintForm({
           className="mt-0.5"
         />
         <span>
-          Flag as <strong>Urgent</strong> — Student Coordinator grievance queue
+          Flag as <strong>Urgent</strong> — Student council member grievance queue
         </span>
       </label>
 

@@ -18,7 +18,7 @@ const DEMO = [
   { email: "furniture@hostel.edu", label: "Staff — Furniture" },
   { email: "locks@hostel.edu", label: "Staff — Locks" },
   { email: "desk@hostel.edu", label: "Registration desk" },
-  { email: "sc@hostel.edu", label: "Student Coordinator" },
+  { email: "sc@hostel.edu", label: "Student council member" },
   { email: "admin@hostel.edu", label: "Admin / Chief Warden" },
 ];
 

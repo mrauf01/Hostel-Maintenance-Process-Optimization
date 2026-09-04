@@ -217,7 +217,7 @@ export function TicketActions({
             variant="outline"
             disabled={pending}
             onClick={() =>
-              run({ id: complaint.id, is_urgent: true }, "Flagged urgent for SC")
+              run({ id: complaint.id, is_urgent: true }, "Flagged urgent for Student council member")
             }
           >
             Flag as urgent

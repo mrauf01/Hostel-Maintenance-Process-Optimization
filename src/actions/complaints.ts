@@ -293,7 +293,7 @@ export async function createComplaint(input: {
       : `Walk-in / call logged by ${me.full_name}`
   );
   if (input.is_urgent) {
-    addEvent(id, me.id, "flagged_urgent", "Flagged urgent — visible in SC grievance queue");
+    addEvent(id, me.id, "flagged_urgent", "Flagged urgent — visible in the Student council member grievance queue");
     s.profiles
       .filter((p) => p.role === "sc")
       .forEach((p) =>
@@ -403,7 +403,7 @@ async function updateComplaintStatusLive(
       c.id,
       me.id,
       "escalated",
-      input.note || "SC escalated to Admin (Chief Warden / Chief Engineer)"
+      input.note || "Student council member escalated to Admin (Chief Warden / Chief Engineer)"
     );
     await sbNotifyUsers(admins, "Escalated to Admin", c.ticket_id, c.id);
     if (c.assigned_staff_id)
@@ -595,7 +595,7 @@ export async function updateComplaintStatus(input: {
       c.id,
       me.id,
       "escalated",
-      input.note || "SC escalated to Admin (Chief Warden / Chief Engineer)"
+      input.note || "Student council member escalated to Admin (Chief Warden / Chief Engineer)"
     );
     s.profiles
       .filter((p) => p.role === "admin")

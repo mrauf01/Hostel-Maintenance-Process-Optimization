@@ -25,7 +25,7 @@ Open [http://localhost:43147](http://localhost:43147). Demo password for every s
 | `furniture@hostel.edu` | Furniture / carpentry |
 | `locks@hostel.edu` | Locks |
 | `desk@hostel.edu` | Registration desk (walk-in / call logging) |
-| `sc@hostel.edu` | Student Coordinator |
+| `sc@hostel.edu` | Student council member |
 | `admin@hostel.edu` | Admin (Chief Warden) |
 
 Use **Switch demo role** in the header to hop accounts without signing out.
@@ -34,7 +34,7 @@ Use **Switch demo role** in the header to hop accounts without signing out.
 
 1. Create a project at [supabase.com](https://supabase.com).
 2. SQL editor → run `supabase/migrations/0001_init.sql`, then `0002_storage.sql`, then `FIX_DATABASE.sql` (adds `approved` and `phone`, repairs recursive RLS, and activates `mrauf1192@gmail.com` as Admin). If the site already talks to Supabase but dashboards fail, **only** `FIX_DATABASE.sql` is required. To add contact numbers on an existing project without re-running the full file, run `supabase/migrations/0006_contact_phone.sql`.
-3. Authentication → enable Email provider. Create staff/SC/Admin users, then set `profiles.role` (and `category` for staff) or run `supabase/seed_roles.sql`.
+3. Authentication → enable Email provider. Create staff / Student council member / Admin users, then set `profiles.role` (and `category` for staff) or run `supabase/seed_roles.sql`.
 4. Put keys in `.env.local` and Vercel env:
 
 ```
@@ -62,7 +62,7 @@ This is a standard Next.js app. Set the same env vars in the Vercel project. The
 5. **Resolution branch** — minor: complete with photo; major: Material Requested or Vendor Unavailable (Admin-visible).
 6. **Verification** — completion photo → Pending Student Confirmation.
 7. **Closure** — student Confirm Resolved / Not Resolved (reopens + notifies staff and Admin). No OTP.
-8. **Urgent / escalation** — student Urgent flag → SC grievance queue → escalate to Admin → optional Further Escalation with audit timestamp.
+8. **Urgent / escalation** — student Urgent flag → Student council member grievance queue → escalate to Admin → optional Further Escalation with audit timestamp.
 
 SLA status **On Track / At Risk / Breached** is computed from `created_at` + the matching `sla_rules` row (70% of the window = At Risk). Admin edits the matrix on the Admin dashboard (not hardcoded).
 
@@ -89,7 +89,7 @@ SLA status **On Track / At Risk / Breached** is computed from `created_at` + the
 
 ## RLS (when using Supabase)
 
-See `supabase/migrations/0001_init.sql` plus `0004_fix_rls_and_approval.sql`. Policies use `my_role()` / `my_category()` so they do not recurse on `profiles`. Students see/insert own tickets and may update to confirm or reopen. Staff see their category / assignments. SC sees `is_urgent` or `status = escalated`. Admin sees everything, including `sla_rules`.
+See `supabase/migrations/0001_init.sql` plus `0004_fix_rls_and_approval.sql`. Policies use `my_role()` / `my_category()` so they do not recurse on `profiles`. Students see/insert own tickets and may update to confirm or reopen. Staff see their category / assignments. A Student council member sees `is_urgent` or `status = escalated`. Admin sees everything, including `sla_rules`.
 
 `GET /api/health` reports whether Postgres tables and the service role key are working (no secrets in the response).
 

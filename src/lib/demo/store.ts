@@ -141,7 +141,7 @@ function makeSeed(): DemoStore {
     },
     {
       id: uid("21"),
-      full_name: "Ananya Shah (SC)",
+      full_name: "Ananya Shah (Student council member)",
       email: "sc@hostel.edu",
       role: "sc",
       category: null,
@@ -522,7 +522,7 @@ function makeSeed(): DemoStore {
       addEvent(c, "pending_confirmation", hoursAgo(2), c.assigned_staff_id!, "Washer replaced. Please confirm.");
     }
     if (c.status === "escalated") {
-      addEvent(c, "escalated", hoursAgo(4), uid("21"), "SC escalated to Admin — vendor visit did not close the issue.");
+      addEvent(c, "escalated", hoursAgo(4), uid("21"), "Student council member escalated to Admin — vendor visit did not close the issue.");
     }
     if (c.status === "reopened") {
       addEvent(c, "resolved", hoursAgo(20), student, "Previously confirmed");

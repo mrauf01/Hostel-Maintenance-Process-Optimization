@@ -86,7 +86,7 @@ export const PRIORITY_LABELS: Record<Priority, string> = {
 export const ROLE_LABELS: Record<string, string> = {
   student: "Student",
   staff: "Maintenance Staff",
-  sc: "Student Coordinator",
+  sc: "Student council member",
   admin: "Admin (Chief Warden)",
 };
 
@@ -141,7 +141,7 @@ export const SIGNUP_ROLES: {
   },
   {
     id: "sc",
-    label: "Student Coordinator",
+    label: "Student council member",
     hint: "Urgent / grievance queue",
     role: "sc",
     category: null,

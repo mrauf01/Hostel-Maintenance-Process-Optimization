@@ -152,7 +152,7 @@ export default function HomePage() {
                 line: "Electrical, plumbing, furniture, locks, and walk-in logging.",
               },
               {
-                role: "Student Coordinator",
+                role: "Student council member",
                 line: "Grievance queue for urgent and escalated tickets.",
               },
               {

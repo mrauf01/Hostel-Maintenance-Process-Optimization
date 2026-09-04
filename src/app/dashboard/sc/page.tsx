@@ -23,7 +23,7 @@ export default async function ScDashboard() {
         <TicketBoard
           complaints={complaints}
           emptyTitle="Grievance queue is clear"
-          emptyBody="Urgent tickets appear here the moment a student flags them. Nothing needs the SC right now."
+          emptyBody="Urgent tickets appear here the moment a student flags them. Nothing needs a Student council member right now."
         />
       </div>
     </AppShell>
