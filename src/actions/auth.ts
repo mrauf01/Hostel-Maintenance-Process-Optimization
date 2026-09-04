@@ -16,7 +16,34 @@ import {
 import { createServerSupabase } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentProfile } from "@/lib/current-profile";
+import { normalizePhone } from "@/lib/phone";
 import type { Profile, StaffCategory, UserRole } from "@/lib/types";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+async function upsertProfileRow(
+  admin: SupabaseClient,
+  row: Record<string, unknown>
+): Promise<string | null> {
+  let payload: Record<string, unknown> = { ...row };
+  for (let i = 0; i < 4; i++) {
+    const { error } = await admin.from("profiles").upsert(payload);
+    if (!error) return null;
+    if (/phone/i.test(error.message) && "phone" in payload) {
+      const { phone: _p, ...rest } = payload;
+      void _p;
+      payload = rest;
+      continue;
+    }
+    if (/approved/i.test(error.message) && "approved" in payload) {
+      const { approved: _a, ...rest } = payload;
+      void _a;
+      payload = rest;
+      continue;
+    }
+    return error.message;
+  }
+  return "Could not save profile.";
+}
 
 function live() {
   return !isDemoMode() && isSupabaseConfigured();
@@ -83,6 +110,7 @@ export async function signUpAccount(input: {
   full_name: string;
   email: string;
   password: string;
+  phone: string;
   role: UserRole;
   category: StaffCategory | null;
   hostel_block?: string;
@@ -92,6 +120,11 @@ export async function signUpAccount(input: {
     return { error: "Admin accounts are created by the Chief Warden only." };
   }
   if (!input.full_name.trim()) return { error: "Enter your full name." };
+  const phoneRes = normalizePhone(input.phone ?? "");
+  if (phoneRes.error || !phoneRes.phone) {
+    return { error: phoneRes.error ?? "Enter a contact number." };
+  }
+  const phone = phoneRes.phone;
   if (input.password.length < 6) {
     return { error: "Password must be at least 6 characters." };
   }
@@ -100,7 +133,7 @@ export async function signUpAccount(input: {
     if (findUserByEmail(input.email)) {
       return { error: "That email is already registered." };
     }
-    const p = createAccount(input);
+    const p = createAccount({ ...input, phone });
     cookies().set(SESSION_COOKIE, p.id, {
       httpOnly: true,
       sameSite: "lax",
@@ -122,6 +155,7 @@ export async function signUpAccount(input: {
         category: input.category,
         hostel_block: input.hostel_block,
         room_number: input.room_number,
+        phone,
       },
     },
   });
@@ -136,17 +170,11 @@ export async function signUpAccount(input: {
       category: input.category,
       hostel_block: input.hostel_block ?? null,
       room_number: input.room_number ?? null,
+      phone,
       approved: false,
     };
-    const first = await admin.from("profiles").upsert(row);
-    if (first.error && /approved/i.test(first.error.message)) {
-      const { approved: _a, ...withoutApproved } = row;
-      void _a;
-      const retry = await admin.from("profiles").upsert(withoutApproved);
-      if (retry.error) return { error: retry.error.message };
-    } else if (first.error) {
-      return { error: first.error.message };
-    }
+    const upsertError = await upsertProfileRow(admin, row);
+    if (upsertError) return { error: upsertError };
     cookies().set(SESSION_COOKIE, data.user.id, {
       httpOnly: true,
       sameSite: "lax",

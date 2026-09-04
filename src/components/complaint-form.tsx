@@ -114,7 +114,8 @@ export function ComplaintForm({
                 .map((s) => (
                   <SelectItem key={s.id} value={s.id}>
                     {s.full_name} · {s.hostel_block}
-                    {s.room_number} · {s.email}
+                    {s.room_number} · {s.phone ? `${s.phone} · ` : ""}
+                    {s.email}
                   </SelectItem>
                 ))}
             </SelectContent>

@@ -39,8 +39,11 @@ create table if not exists public.profiles (
   category staff_category,
   hostel_block text,
   room_number text,
+  phone text,
   created_at timestamptz not null default now()
 );
+
+alter table public.profiles add column if not exists phone text;
 
 -- SLA rules (editable by Admin — not hardcoded in application logic)
 create table if not exists public.sla_rules (

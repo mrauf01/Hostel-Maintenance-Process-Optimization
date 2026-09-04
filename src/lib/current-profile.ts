@@ -54,14 +54,30 @@ export const getCurrentProfile = cache(async (): Promise<Profile | null> => {
       category: (user.user_metadata?.category as StaffCategory) || null,
       hostel_block: (user.user_metadata?.hostel_block as string) || null,
       room_number: (user.user_metadata?.room_number as string) || null,
+      phone: (user.user_metadata?.phone as string) || null,
       created_at: new Date().toISOString(),
       approved: false,
     };
     const first = await admin.from("profiles").upsert(created);
-    if (first.error && /approved/i.test(first.error.message)) {
-      const { approved: _a, ...withoutApproved } = created;
-      void _a;
-      await admin.from("profiles").upsert(withoutApproved);
+    if (first.error) {
+      let payload: Record<string, unknown> = { ...created };
+      const msg = first.error.message;
+      if (/phone/i.test(msg) && "phone" in payload) {
+        const { phone: _p, ...rest } = payload;
+        void _p;
+        payload = rest;
+      }
+      if (/approved/i.test(msg) && "approved" in payload) {
+        const { approved: _a, ...rest } = payload;
+        void _a;
+        payload = rest;
+      }
+      const retry = await admin.from("profiles").upsert(payload);
+      if (retry.error && /approved/i.test(retry.error.message)) {
+        const { approved: _a, ...withoutApproved } = payload;
+        void _a;
+        await admin.from("profiles").upsert(withoutApproved);
+      }
     }
     return { ...created, approved: created.role === "admin" };
   }

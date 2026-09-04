@@ -18,6 +18,7 @@ export default function SignupPage() {
   const [form, setForm] = useState({
     full_name: "",
     email: "",
+    phone: "",
     password: "",
     hostel_block: "B",
     room_number: "",
@@ -98,6 +99,21 @@ export default function SignupPage() {
               value={form.email}
               onChange={(e) =>
                 setForm((f) => ({ ...f, email: e.target.value }))
+              }
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="phone">Contact number</Label>
+            <Input
+              id="phone"
+              type="tel"
+              required
+              inputMode="tel"
+              autoComplete="tel"
+              placeholder="10–15 digits, with country code if needed"
+              value={form.phone}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, phone: e.target.value }))
               }
             />
           </div>

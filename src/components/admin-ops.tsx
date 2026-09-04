@@ -73,6 +73,7 @@ export function AdminOps({
       (p) =>
         p.full_name.toLowerCase().includes(q) ||
         p.email.toLowerCase().includes(q) ||
+        (p.phone ?? "").toLowerCase().includes(q) ||
         (ROLE_LABELS[p.role] ?? p.role).toLowerCase().includes(q)
     );
   }, [people, query]);
@@ -112,7 +113,9 @@ export function AdminOps({
               <div>
                 <p className="text-sm font-medium">{u.full_name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {u.email} · {ROLE_LABELS[u.role] ?? u.role}
+                  {u.email}
+                  {u.phone ? ` · ${u.phone}` : ""} ·{" "}
+                  {ROLE_LABELS[u.role] ?? u.role}
                   {u.category ? ` · ${CATEGORY_LABELS[u.category] ?? u.category}` : ""}
                 </p>
               </div>
@@ -159,7 +162,7 @@ export function AdminOps({
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search name or email…"
+            placeholder="Search name, email, or phone…"
             className="sm:max-w-xs"
             aria-label="Search registered people"
           />
@@ -187,7 +190,9 @@ export function AdminOps({
                   ) : null}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {p.email} · {ROLE_LABELS[p.role] ?? p.role}
+                  {p.email}
+                  {p.phone ? ` · ${p.phone}` : ""} ·{" "}
+                  {ROLE_LABELS[p.role] ?? p.role}
                   {p.category ? ` · ${CATEGORY_LABELS[p.category] ?? p.category}` : ""}
                   {p.hostel_block
                     ? ` · Block ${p.hostel_block}${p.room_number ?? ""}`
@@ -286,7 +291,10 @@ export function AdminOps({
               <div key={s.id} className="flex items-center justify-between gap-2 text-sm">
                 <div>
                   <p className="font-medium">{s.full_name}</p>
-                  <p className="text-xs text-muted-foreground">{s.email}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {s.email}
+                    {s.phone ? ` · ${s.phone}` : ""}
+                  </p>
                 </div>
                 <span className="capitalize text-xs">{s.category}</span>
               </div>

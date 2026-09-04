@@ -36,7 +36,11 @@ export default async function TicketPage({
             {PRIORITY_LABELS[complaint.priority]} · logged{" "}
             {formatDateTime(complaint.created_at)}
             {complaint.student
-              ? ` · ${complaint.student.full_name}`
+              ? ` · ${complaint.student.full_name}${
+                  complaint.student.phone
+                    ? ` · ${complaint.student.phone}`
+                    : ""
+                }`
               : ""}
           </p>
         </div>

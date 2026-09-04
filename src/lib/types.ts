@@ -34,6 +34,7 @@ export type Profile = {
   category: StaffCategory | null;
   hostel_block: string | null;
   room_number: string | null;
+  phone?: string | null;
   created_at: string;
   /** False until Chief Warden / Admin activates the account. */
   approved?: boolean;

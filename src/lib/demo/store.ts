@@ -59,6 +59,7 @@ function makeSeed(): DemoStore {
       category: null,
       hostel_block: "B",
       room_number: "214",
+      phone: "+91 98765 43210",
       created_at: daysAgo(40),
     },
     {
@@ -69,6 +70,7 @@ function makeSeed(): DemoStore {
       category: null,
       hostel_block: "A",
       room_number: "108",
+      phone: "+91 91234 56780",
       created_at: daysAgo(50),
     },
     {
@@ -79,6 +81,7 @@ function makeSeed(): DemoStore {
       category: "electrical",
       hostel_block: null,
       room_number: null,
+      phone: "+91 98111 10001",
       created_at: daysAgo(200),
     },
     {
@@ -89,6 +92,7 @@ function makeSeed(): DemoStore {
       category: "electrical",
       hostel_block: null,
       room_number: null,
+      phone: "+91 98111 10002",
       created_at: daysAgo(180),
     },
     {
@@ -99,6 +103,7 @@ function makeSeed(): DemoStore {
       category: "plumbing",
       hostel_block: null,
       room_number: null,
+      phone: "+91 98111 10003",
       created_at: daysAgo(190),
     },
     {
@@ -109,6 +114,7 @@ function makeSeed(): DemoStore {
       category: "furniture",
       hostel_block: null,
       room_number: null,
+      phone: "+91 98111 10004",
       created_at: daysAgo(170),
     },
     {
@@ -119,6 +125,7 @@ function makeSeed(): DemoStore {
       category: "locks",
       hostel_block: null,
       room_number: null,
+      phone: "+91 98111 10005",
       created_at: daysAgo(160),
     },
     {
@@ -129,6 +136,7 @@ function makeSeed(): DemoStore {
       category: "other",
       hostel_block: null,
       room_number: null,
+      phone: "+91 98111 10006",
       created_at: daysAgo(150),
     },
     {
@@ -139,6 +147,7 @@ function makeSeed(): DemoStore {
       category: null,
       hostel_block: null,
       room_number: null,
+      phone: "+91 98111 20001",
       created_at: daysAgo(300),
     },
     {
@@ -149,6 +158,7 @@ function makeSeed(): DemoStore {
       category: null,
       hostel_block: null,
       room_number: null,
+      phone: "+91 98111 30001",
       created_at: daysAgo(400),
     },
   ];
@@ -677,6 +687,7 @@ export function createAccount(input: {
   full_name: string;
   email: string;
   password: string;
+  phone?: string;
   role: UserRole;
   category: StaffCategory | null;
   hostel_block?: string;
@@ -691,6 +702,7 @@ export function createAccount(input: {
     category: input.category,
     hostel_block: input.hostel_block ?? null,
     room_number: input.room_number ?? null,
+    phone: input.phone ?? null,
     created_at: new Date().toISOString(),
     approved: false,
   };
