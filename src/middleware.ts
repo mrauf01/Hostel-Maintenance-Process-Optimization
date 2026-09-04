@@ -18,10 +18,9 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
+  // Never bounce /login ↔ /dashboard here. A cookie without a profile
+  // would otherwise loop and render a blank page.
   if (PUBLIC.includes(pathname) || pathname === "/") {
-    if (hasSession && PUBLIC.includes(pathname)) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
-    }
     return response;
   }
 
@@ -29,7 +28,11 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", pathname);
-    return NextResponse.redirect(url);
+    const redirect = NextResponse.redirect(url);
+    response.cookies.getAll().forEach((c) => {
+      redirect.cookies.set(c.name, c.value);
+    });
+    return redirect;
   }
 
   return response;

@@ -23,6 +23,7 @@ const DEMO = [
 
 function LoginForm() {
   const router = useRouter();
+  const err = useSearchParams().get("error");
   const next = useSearchParams().get("next") || "/dashboard";
   const demo = process.env.NEXT_PUBLIC_DEMO_MODE !== "false";
   const [email, setEmail] = useState(demo ? "student@hostel.edu" : "");
@@ -37,6 +38,13 @@ function LoginForm() {
             ? "Demo portal — pick an account below or sign in with demo123."
             : "Sign in with the hostel account created in Supabase Auth."}
         </p>
+        {err && (
+          <p className="mt-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            Could not open the dashboard. Sign in again. If this keeps happening,
+            set NEXT_PUBLIC_DEMO_MODE to true in Vercel and Redeploy for the full
+            demo.
+          </p>
+        )}
       <form
         className="mt-6 space-y-4"
         onSubmit={(e) => {

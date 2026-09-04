@@ -11,6 +11,7 @@ import {
   getStore,
 } from "@/lib/demo/store";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { Profile } from "@/lib/types";
 
 export async function getCurrentProfile(): Promise<Profile | null> {
@@ -26,12 +27,33 @@ export async function getCurrentProfile(): Promise<Profile | null> {
   } = await supabase.auth.getUser();
   const userId = user?.id ?? cookies().get(SESSION_COOKIE)?.value;
   if (!userId) return null;
-  const { data } = await supabase
+
+  const admin = createAdminClient();
+  const reader = admin ?? supabase;
+  const { data } = await reader
     .from("profiles")
     .select("*")
     .eq("id", userId)
-    .single();
-  return data as Profile | null;
+    .maybeSingle();
+  if (data) return data as Profile;
+
+  if (admin && user?.email) {
+    const created = {
+      id: user.id,
+      full_name:
+        (user.user_metadata?.full_name as string) ||
+        user.email.split("@")[0],
+      email: user.email,
+      role: "student" as const,
+      category: null,
+      hostel_block: null,
+      room_number: null,
+      created_at: new Date().toISOString(),
+    };
+    await admin.from("profiles").upsert(created);
+    return created;
+  }
+  return null;
 }
 
 export async function signInDemo(email: string, password: string) {

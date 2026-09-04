@@ -45,8 +45,13 @@ export async function listComplaintsForUser(): Promise<Complaint[]> {
   const me = await getCurrentProfile();
   if (!me) return [];
   if (liveDb()) {
-    const { sbListComplaints } = await import("@/lib/supabase/data");
-    return filterByRole(await sbListComplaints(), me);
+    try {
+      const { sbListComplaints } = await import("@/lib/supabase/data");
+      return filterByRole(await sbListComplaints(), me);
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
   }
   const all = getStore().complaints.map(hydrateComplaint);
   return filterByRole(all, me);
@@ -54,8 +59,13 @@ export async function listComplaintsForUser(): Promise<Complaint[]> {
 
 export async function listComplaintEvents(): Promise<ComplaintEvent[]> {
   if (liveDb()) {
-    const { sbListEvents } = await import("@/lib/supabase/data");
-    return sbListEvents();
+    try {
+      const { sbListEvents } = await import("@/lib/supabase/data");
+      return sbListEvents();
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
   }
   return getStore().events;
 }
