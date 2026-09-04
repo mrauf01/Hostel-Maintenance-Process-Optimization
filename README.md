@@ -66,16 +66,6 @@ This is a standard Next.js app. Set the same env vars in the Vercel project. The
 
 SLA status **On Track / At Risk / Breached** is computed from `created_at` + the matching `sla_rules` row (70% of the window = At Risk). Admin edits the matrix on the Admin dashboard (not hardcoded).
 
-## Project deliverable map
-
-| PJM deliverable | Where it lives in this app |
-|---|---|
-| **1. As-is / to-be process (lifecycle)** | Home page narrative + visual stepper on `/complaints/[ticket_id]` (Registered → Assigned → In Progress → Resolved/Escalated) and the event audit trail |
-| **2. SLA design** | `sla_rules` table / Admin **SLA, staff & vendors** tab; badges on every ticket card |
-| **3. KPI / monitoring dashboard** | Admin `/dashboard/admin` → **KPI dashboard** (lead time vs 2-day target, % over 2 days, closure within SLA, avg dispatch time, backlog by category). Recharts, date/category filters, clickable legend |
-| **4. Single portal (ERP equivalent)** | `/login` + role dashboards under `/dashboard/*` and one intake form |
-| **5. Escalation & grievance path** | Student Urgent → `/dashboard/sc` → Escalate to Admin → Further Escalation flag + history |
-
 ## Pages
 
 - `/login`, `/signup`

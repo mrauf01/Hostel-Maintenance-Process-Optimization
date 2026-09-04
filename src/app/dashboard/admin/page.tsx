@@ -35,7 +35,6 @@ export default async function AdminDashboard() {
       <RealtimeRefresher userId={user.id} initial={complaints} />
       <h1 className="text-2xl font-semibold">Operations overview</h1>
       <p className="text-sm text-muted-foreground">
-        Deliverable 3 — KPI monitoring toward a 2-day resolution target.{" "}
         {breached.length} ticket{breached.length === 1 ? "" : "s"} currently
         past SLA.
       </p>
