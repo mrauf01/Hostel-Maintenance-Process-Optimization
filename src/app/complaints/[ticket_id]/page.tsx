@@ -86,13 +86,38 @@ export default async function TicketPage({
           )}
           <TicketTimeline complaint={complaint} events={events} />
         </div>
-        <aside className="h-fit rounded-2xl border bg-card p-5">
-          <h2 className="mb-3 text-sm font-semibold">Actions</h2>
-          <TicketActions
-            complaint={complaint}
-            role={user.role}
-            staff={staff}
-          />
+        <aside className="h-fit space-y-4">
+          <div className="rounded-2xl border bg-card p-5">
+            <h2 className="text-sm font-semibold">Allocated staff</h2>
+            {complaint.assigned_staff ? (
+              <div className="mt-2 text-sm">
+                <p className="font-medium">{complaint.assigned_staff.full_name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {complaint.assigned_staff.category
+                    ? `${complaint.assigned_staff.category} · `
+                    : ""}
+                  {complaint.assigned_staff.email}
+                </p>
+                <p className="mt-1 text-xs font-medium">
+                  Contact no:{" "}
+                  {complaint.assigned_staff.phone?.trim() || "—"}
+                </p>
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-muted-foreground">
+                No staff allocated yet. The ticket stays in Registered until
+                someone in that trade is free.
+              </p>
+            )}
+          </div>
+          <div className="rounded-2xl border bg-card p-5">
+            <h2 className="mb-3 text-sm font-semibold">Actions</h2>
+            <TicketActions
+              complaint={complaint}
+              role={user.role}
+              staff={staff}
+            />
+          </div>
         </aside>
       </div>
     </AppShell>
