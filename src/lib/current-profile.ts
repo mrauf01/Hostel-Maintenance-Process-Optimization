@@ -49,7 +49,13 @@ export const getCurrentProfile = cache(async (): Promise<Profile | null> => {
   if (data) {
     const p = data as Profile;
     const approved = p.role === "admin" ? true : p.approved !== false;
-    return { ...p, approved };
+    let phone = p.phone?.trim() || null;
+    if (!phone && admin) {
+      const { data: authUser } = await admin.auth.admin.getUserById(userId);
+      const raw = authUser.user?.user_metadata?.phone;
+      if (typeof raw === "string" && raw.trim()) phone = raw.trim();
+    }
+    return { ...p, approved, phone };
   }
 
   if (admin && user?.email) {

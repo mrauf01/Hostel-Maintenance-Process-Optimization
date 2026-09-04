@@ -22,8 +22,7 @@ import type { Profile, SlaRule, Vendor } from "@/lib/types";
 
 function phoneLine(p: Profile) {
   const n = p.phone?.trim();
-  if (!n) return "Phone not on file";
-  return n;
+  return n ? `Contact no: ${n}` : "Contact no: —";
 }
 
 export function AdminOps({
@@ -167,7 +166,7 @@ export function AdminOps({
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search name, email, or phone…"
+            placeholder="Search name, email, or contact no…"
             className="sm:max-w-xs"
             aria-label="Search registered people"
           />

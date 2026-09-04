@@ -26,19 +26,59 @@ function logDb(label: string, error: { message: string } | null) {
   if (error) console.error(`[supabase ${label}]`, error.message);
 }
 
+function metaPhone(meta: Record<string, unknown> | undefined): string | null {
+  if (!meta) return null;
+  const raw = meta.phone ?? meta.contact_number ?? meta.contact;
+  if (typeof raw === "string" && raw.trim()) return raw.trim();
+  if (typeof raw === "number") return String(raw);
+  return null;
+}
+
+export const sbAuthPhones = cache(async (): Promise<Map<string, string>> => {
+  const map = new Map<string, string>();
+  try {
+    const admin = db();
+    for (let page = 1; page <= 10; page++) {
+      const { data, error } = await admin.auth.admin.listUsers({
+        page,
+        perPage: 200,
+      });
+      if (error) {
+        logDb("auth_phones", error);
+        break;
+      }
+      const users = data.users ?? [];
+      for (const u of users) {
+        const n = metaPhone(u.user_metadata as Record<string, unknown>);
+        if (n) map.set(u.id, n);
+      }
+      if (users.length < 200) break;
+    }
+  } catch (e) {
+    console.error("[auth_phones]", e);
+  }
+  return map;
+});
+
+function applyAuthPhones(
+  profiles: Profile[],
+  phones: Map<string, string>
+): Profile[] {
+  return profiles.map((p) => ({
+    ...p,
+    phone: p.phone?.trim() || phones.get(p.id) || null,
+  }));
+}
+
 export const sbListProfiles = cache(async (): Promise<Profile[]> => {
   const { data, error } = await db().from("profiles").select("*");
   logDb("profiles", error);
-  return (data ?? []) as Profile[];
+  const phones = await sbAuthPhones();
+  return applyAuthPhones((data ?? []) as Profile[], phones);
 });
 
 export async function sbListStaff(): Promise<Profile[]> {
-  const { data, error } = await db()
-    .from("profiles")
-    .select("*")
-    .eq("role", "staff");
-  logDb("staff", error);
-  return (data ?? []) as Profile[];
+  return (await sbListProfiles()).filter((p) => p.role === "staff");
 }
 
 export async function sbListSlaRules(): Promise<SlaRule[]> {
@@ -85,7 +125,10 @@ async function hydrate(rows: Complaint[]): Promise<Complaint[]> {
   }
   const { data, error } = await db().from("profiles").select("*").in("id", ids);
   logDb("hydrate_profiles", error);
-  const byId = new Map(((data ?? []) as Profile[]).map((p) => [p.id, p]));
+  const phones = await sbAuthPhones();
+  const byId = new Map(
+    applyAuthPhones((data ?? []) as Profile[], phones).map((p) => [p.id, p])
+  );
   return rows.map((c) => ({
     ...c,
     ticket_id: canonicalTicketId(c.ticket_id),

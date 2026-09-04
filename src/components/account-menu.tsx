@@ -101,7 +101,7 @@ export function AccountMenu({ user }: { user: Profile }) {
           <dl>
             <Row label="Name" value={user.full_name} />
             <Row label="Email" value={user.email} />
-            {user.phone && <Row label="Contact" value={user.phone} />}
+            <Row label="Contact no" value={user.phone || "—"} />
             <Row label="Role" value={role} />
             {category && <Row label="Desk" value={category} />}
             {user.hostel_block && (
